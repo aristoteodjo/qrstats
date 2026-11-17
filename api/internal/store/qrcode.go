@@ -107,8 +107,13 @@ func (s *QRCodeStore) Delete(ctx context.Context, owner, id string) error {
 	return nil
 }
 
-// RecordUnlockFailure is one atomic UPDATE, so concurrent instances never lose a count.
-func (s *QRCodeStore) RecordUnlockFailure(ctx context.Context, id string, now time.Time, window time.Duration) (int, error) {
+func (s *QRCodeStore) ReleaseUnlockAttempt(ctx context.Context, id string) error {
+	return s.db.WithContext(ctx).Exec(
+		"UPDATE qr_codes SET unlock_failures = GREATEST(unlock_failures - 1, 0) WHERE id = ?", id).Error
+}
+
+// ReserveUnlockAttempt is one atomic UPDATE ... RETURNING, so concurrent instances never read a stale count.
+func (s *QRCodeStore) ReserveUnlockAttempt(ctx context.Context, id string, now time.Time, window time.Duration) (int, error) {
 	var count int
 	err := s.db.WithContext(ctx).Raw(`
 		UPDATE qr_codes SET

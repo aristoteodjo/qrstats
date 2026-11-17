@@ -89,11 +89,17 @@ func TestStoresIsolateOwnersAndAggregate(t *testing.T) {
 
 	now := time.Now().UTC()
 	for want := 1; want <= 3; want++ {
-		if got, err := codes.RecordUnlockFailure(ctx, bob.ID, now, time.Minute); err != nil || got != want {
+		if got, err := codes.ReserveUnlockAttempt(ctx, bob.ID, now, time.Minute); err != nil || got != want {
 			t.Fatalf("failure count = %d, %v; want %d", got, err, want)
 		}
 	}
-	if got, _ := codes.RecordUnlockFailure(ctx, bob.ID, now.Add(2*time.Minute), time.Minute); got != 1 {
+	if err := codes.ReleaseUnlockAttempt(ctx, bob.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := codes.ReserveUnlockAttempt(ctx, bob.ID, now, time.Minute); got != 3 {
+		t.Fatalf("a released attempt is given back, got %d", got)
+	}
+	if got, _ := codes.ReserveUnlockAttempt(ctx, bob.ID, now.Add(2*time.Minute), time.Minute); got != 1 {
 		t.Fatalf("a new window restarts the count, got %d", got)
 	}
 

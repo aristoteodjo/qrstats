@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -86,7 +87,18 @@ func (m *memoryStore) Delete(_ context.Context, owner, id string) error {
 	return nil
 }
 
-func (m *memoryStore) RecordUnlockFailure(_ context.Context, id string, now time.Time, window time.Duration) (int, error) {
+func (m *memoryStore) ReleaseUnlockAttempt(_ context.Context, id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	c := m.codes[id]
+	if c.UnlockFailures > 0 {
+		c.UnlockFailures--
+	}
+	m.codes[id] = c
+	return nil
+}
+
+func (m *memoryStore) ReserveUnlockAttempt(_ context.Context, id string, now time.Time, window time.Duration) (int, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	c := m.codes[id]
@@ -187,6 +199,24 @@ func TestPasswordLockAndUnlock(t *testing.T) {
 	}
 	if _, err := s.Unlock(ctx, qr.Slug, "sesame", "fresh-ip"); !errors.Is(err, ErrTooManyTries) {
 		t.Fatalf("rotating addresses must not bypass the per-code cap: %v", err)
+	}
+
+	// Concurrent guesses all reserve before checking: never more than the cap get to bcrypt.
+	other, _ := s.Create(ctx, "alice", CreateInput{Kind: KindURL, Content: link("example.com"), Password: "sesame"})
+	var wrong atomic.Int32
+	var wg sync.WaitGroup
+	for i := 0; i < UnlockMaxFailures*2; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			if _, err := s.Unlock(ctx, other.Slug, "wrong", fmt.Sprintf("racer-%d", i)); errors.Is(err, ErrWrongPassword) {
+				wrong.Add(1)
+			}
+		}(i)
+	}
+	wg.Wait()
+	if wrong.Load() > UnlockMaxFailures {
+		t.Fatalf("%d guesses reached bcrypt, cap is %d", wrong.Load(), UnlockMaxFailures)
 	}
 
 	empty := ""

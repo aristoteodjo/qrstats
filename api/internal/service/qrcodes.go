@@ -42,9 +42,11 @@ type QRStore interface {
 	List(ctx context.Context, owner string, filter ListFilter) ([]QRSummary, int64, error)
 	Update(ctx context.Context, qr *model.QRCode) error
 	Delete(ctx context.Context, owner, id string) error
-	// RecordUnlockFailure counts one failed password for a code, in a window shared by every instance, and returns
-	// the count in the current window.
-	RecordUnlockFailure(ctx context.Context, id string, now time.Time, window time.Duration) (int, error)
+	// ReserveUnlockAttempt atomically counts one password attempt for a code, in a window shared by every instance,
+	// and returns the count including this one. Reserving before checking leaves no gap for concurrent guesses.
+	ReserveUnlockAttempt(ctx context.Context, id string, now time.Time, window time.Duration) (int, error)
+	// ReleaseUnlockAttempt gives back the attempt of a correct password: legitimate visitors never use up the cap.
+	ReleaseUnlockAttempt(ctx context.Context, id string) error
 }
 
 const (
@@ -272,18 +274,21 @@ func (s *QRCodes) Unlock(ctx context.Context, slug, password, attemptKey string)
 	if !view.Locked {
 		return view, nil
 	}
-	now := s.now().UTC()
-	if qr.UnlockWindowStart != nil && now.Sub(*qr.UnlockWindowStart) < UnlockWindow && qr.UnlockFailures >= UnlockMaxFailures {
-		return Public{}, ErrTooManyTries
-	}
 	if !s.unlocks.Allow(attemptKey + "|" + slug) {
 		return Public{}, ErrTooManyTries
 	}
+	attempts, err := s.store.ReserveUnlockAttempt(ctx, qr.ID, s.now().UTC(), UnlockWindow)
+	if err != nil {
+		return Public{}, err
+	}
+	if attempts > UnlockMaxFailures {
+		return Public{}, ErrTooManyTries
+	}
 	if bcrypt.CompareHashAndPassword([]byte(qr.PasswordHash), []byte(strings.TrimSpace(password))) != nil {
-		if _, err := s.store.RecordUnlockFailure(ctx, qr.ID, now, UnlockWindow); err != nil {
-			return Public{}, err
-		}
 		return Public{}, ErrWrongPassword
+	}
+	if err := s.store.ReleaseUnlockAttempt(ctx, qr.ID); err != nil {
+		return Public{}, err
 	}
 	view.Locked = false
 	view.Content = qr.Content

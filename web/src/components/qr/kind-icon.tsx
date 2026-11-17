@@ -19,7 +19,10 @@ export function KindIcon({ kind, className }: { kind: Kind; className?: string }
     return (
         <span
             aria-hidden="true"
-            className={cn("bg-accent text-accent-foreground grid size-10 shrink-0 place-items-center rounded-lg", className)}
+            className={cn(
+                "bg-accent text-accent-foreground grid size-10 shrink-0 place-items-center rounded-lg",
+                className,
+            )}
         >
             <Icon className="size-5" />
         </span>

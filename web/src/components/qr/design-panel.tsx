@@ -22,7 +22,13 @@ const none = <BanIcon className="size-7" strokeWidth={1.5} />
 /** A 3x3 sample of a dot style, drawn the way qr-code-styling draws it. */
 function DotSample({ style }: { style: Design["dots"]["style"] }) {
     const cells = [
-        [0, 0], [1, 0], [0, 1], [2, 1], [1, 2], [2, 2], [0, 2],
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [2, 1],
+        [1, 2],
+        [2, 2],
+        [0, 2],
     ]
     return (
         <svg viewBox="0 0 30 30" className="size-9">
@@ -48,7 +54,13 @@ function DotSample({ style }: { style: Design["dots"]["style"] }) {
     )
 }
 
-function CornerSample({ square, dot }: { square?: Design["cornersSquare"]["style"]; dot?: Design["cornersDot"]["style"] }) {
+function CornerSample({
+    square,
+    dot,
+}: {
+    square?: Design["cornersSquare"]["style"]
+    dot?: Design["cornersDot"]["style"]
+}) {
     if (square) {
         if (square === "default") return none
         const rx = square === "dot" ? 14 : square === "extra-rounded" ? 7 : 0
@@ -68,7 +80,9 @@ function CornerSample({ square, dot }: { square?: Design["cornersSquare"]["style
 
 function FrameSample({ style }: { style: Design["frame"]["style"] }) {
     if (style === "none") return none
-    const qr = <rect x="9" y={style === "speech" ? 15 : 6} width="22" height="22" rx="1" fill="currentColor" opacity="0.85" />
+    const qr = (
+        <rect x="9" y={style === "speech" ? 15 : 6} width="22" height="22" rx="1" fill="currentColor" opacity="0.85" />
+    )
     const shapes: Record<Exclude<Design["frame"]["style"], "none">, ReactNode> = {
         label: (
             <>
@@ -167,12 +181,20 @@ export function DesignSections({ design, onChange }: Props) {
                         { value: "rounded", label: "Arrondis", render: <DotSample style="rounded" /> },
                         { value: "extra-rounded", label: "Très arrondis", render: <DotSample style="extra-rounded" /> },
                         { value: "classy", label: "Élégants", render: <DotSample style="classy" /> },
-                        { value: "classy-rounded", label: "Élégants arrondis", render: <DotSample style="classy-rounded" /> },
+                        {
+                            value: "classy-rounded",
+                            label: "Élégants arrondis",
+                            render: <DotSample style="classy-rounded" />,
+                        },
                     ]}
                 />
                 <div className="bg-muted/60 grid gap-4 rounded-xl p-4 sm:p-5">
                     <div className="grid items-end gap-3 sm:grid-cols-[1fr_auto_1fr]">
-                        <ColorField label="Couleur des points" value={design.dots.color} onChange={(color) => set("dots", { color })} />
+                        <ColorField
+                            label="Couleur des points"
+                            value={design.dots.color}
+                            onChange={(color) => set("dots", { color })}
+                        />
                         <Button
                             type="button"
                             variant="ghost"
@@ -205,7 +227,12 @@ export function DesignSections({ design, onChange }: Props) {
                 </div>
             </EditorSection>
 
-            <EditorSection value="corners" icon={FrameIcon} title="Coins du QR code" description="Style et couleur des trois repères">
+            <EditorSection
+                value="corners"
+                icon={FrameIcon}
+                title="Coins du QR code"
+                description="Style et couleur des trois repères"
+            >
                 <div className="grid gap-6 lg:grid-cols-2">
                     <ChoiceGrid
                         label="Style des cadres d'angle"
@@ -216,7 +243,11 @@ export function DesignSections({ design, onChange }: Props) {
                             { value: "default", label: "Comme le motif", render: <CornerSample square="default" /> },
                             { value: "dot", label: "Rond", render: <CornerSample square="dot" /> },
                             { value: "square", label: "Carré", render: <CornerSample square="square" /> },
-                            { value: "extra-rounded", label: "Arrondi", render: <CornerSample square="extra-rounded" /> },
+                            {
+                                value: "extra-rounded",
+                                label: "Arrondi",
+                                render: <CornerSample square="extra-rounded" />,
+                            },
                         ]}
                     />
                     <ChoiceGrid
@@ -245,7 +276,12 @@ export function DesignSections({ design, onChange }: Props) {
                 </div>
             </EditorSection>
 
-            <EditorSection value="logo" icon={ImagePlusIcon} title="Ajoutez un logo" description="Un logo ou une image au centre du code">
+            <EditorSection
+                value="logo"
+                icon={ImagePlusIcon}
+                title="Ajoutez un logo"
+                description="Un logo ou une image au centre du code"
+            >
                 <LogoPicker design={design} onChange={onChange} />
             </EditorSection>
         </>
@@ -256,7 +292,12 @@ function TransparentToggle({ checked, onChange }: { checked: boolean; onChange: 
     const id = useId()
     return (
         <div className="flex min-h-11 items-center gap-3">
-            <Checkbox id={id} className="size-5" checked={checked} onCheckedChange={(value) => onChange(value === true)} />
+            <Checkbox
+                id={id}
+                className="size-5"
+                checked={checked}
+                onCheckedChange={(value) => onChange(value === true)}
+            />
             <Label htmlFor={id} className="cursor-pointer font-normal">
                 Arrière-plan transparent
             </Label>
@@ -383,7 +424,12 @@ function LogoPicker({ design, onChange }: Props) {
                             aria-label="Taille du logo"
                         />
                     </div>
-                    <Button type="button" variant="outline" className="min-h-11" onClick={() => setLogo({ preset: null, image: null })}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="min-h-11"
+                        onClick={() => setLogo({ preset: null, image: null })}
+                    >
                         <Trash2Icon aria-hidden />
                         Retirer le logo
                     </Button>

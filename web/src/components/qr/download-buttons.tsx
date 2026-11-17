@@ -10,8 +10,8 @@ import type { Design } from "@/lib/qr"
 type Props = { design: Design; data: string; name: string; className?: string }
 
 /** PNG for screens and print shops, SVG for designers: both from the same rendering. */
-export function DownloadButtons({ design, data, name, className }: Props) {
-    const download = useMutation({
+export function useQrDownload({ design, data, name }: Omit<Props, "className">) {
+    return useMutation({
         mutationFn: async (format: "png" | "svg") => {
             const svg = await renderQrSvg(design, data)
             const blob = format === "svg" ? new Blob([svg], { type: "image/svg+xml" }) : await svgToPng(svg, 2048)
@@ -20,6 +20,10 @@ export function DownloadButtons({ design, data, name, className }: Props) {
         },
         onError: () => toast.error("Le téléchargement a échoué."),
     })
+}
+
+export function DownloadButtons({ design, data, name, className }: Props) {
+    const download = useQrDownload({ design, data, name })
     return (
         <div className={className ?? "flex flex-wrap gap-2"}>
             {(["png", "svg"] as const).map((format) => (

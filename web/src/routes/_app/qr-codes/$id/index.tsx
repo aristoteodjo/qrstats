@@ -79,12 +79,23 @@ function QrDetail() {
                 actions={
                     <>
                         {dynamic ? (
-                            <Button variant="outline" className="min-h-11" disabled={toggle.isPending} onClick={() => toggle.mutate(code)}>
+                            <Button
+                                variant="outline"
+                                className="min-h-11"
+                                disabled={toggle.isPending}
+                                onClick={() => toggle.mutate(code)}
+                            >
                                 {code.status === "active" ? <PauseIcon aria-hidden /> : <PlayIcon aria-hidden />}
                                 {code.status === "active" ? "Mettre en pause" : "Réactiver"}
                             </Button>
                         ) : null}
-                        <Button variant="outline" size="icon" className="size-11" aria-label="Supprimer" onClick={() => setDeleting(true)}>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="size-11"
+                            aria-label="Supprimer"
+                            onClick={() => setDeleting(true)}
+                        >
                             <Trash2Icon />
                         </Button>
                         <Button asChild className="min-h-11">
@@ -99,13 +110,27 @@ function QrDetail() {
             <PageContent>
                 <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
                     <section aria-label="QR code" className="bg-card grid content-start gap-4 rounded-xl border p-5">
-                        <QrImage design={design} data={qrPayload(code.kind, code.content, link)} label={`QR code ${code.name}`} className="w-full" />
-                        <DownloadButtons design={design} data={qrPayload(code.kind, code.content, link)} name={code.name} />
+                        <QrImage
+                            design={design}
+                            data={qrPayload(code.kind, code.content, link)}
+                            label={`QR code ${code.name}`}
+                            className="w-full"
+                        />
+                        <DownloadButtons
+                            design={design}
+                            data={qrPayload(code.kind, code.content, link)}
+                            name={code.name}
+                        />
                     </section>
-                    <section aria-label="Destination" className="bg-card grid content-start gap-5 rounded-xl border p-5">
+                    <section
+                        aria-label="Destination"
+                        className="bg-card grid content-start gap-5 rounded-xl border p-5"
+                    >
                         <div className="grid gap-1">
                             <h2 className="label text-muted-foreground">Mène vers</h2>
-                            <p className="font-heading text-lg font-semibold break-all">{summary(code.kind, code.content)}</p>
+                            <p className="font-heading text-lg font-semibold break-all">
+                                {summary(code.kind, code.content)}
+                            </p>
                             {code.kind === "url" ? (
                                 <a
                                     href={summary(code.kind, code.content)}
@@ -121,7 +146,9 @@ function QrDetail() {
                             <div className="grid gap-2">
                                 <h2 className="label text-muted-foreground">Lien imprimé dans le code</h2>
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <code className="bg-muted rounded-md px-3 py-2 font-mono text-sm break-all">{link}</code>
+                                    <code className="bg-muted rounded-md px-3 py-2 font-mono text-sm break-all">
+                                        {link}
+                                    </code>
                                     <Button
                                         variant="outline"
                                         className="min-h-11"
@@ -136,12 +163,14 @@ function QrDetail() {
                                     </Button>
                                 </div>
                                 <p className="text-muted-foreground text-sm">
-                                    Ce lien ne change jamais. Modifiez la destination quand vous voulez : les codes déjà imprimés suivent.
+                                    Ce lien ne change jamais. Modifiez la destination quand vous voulez : les codes déjà
+                                    imprimés suivent.
                                 </p>
                             </div>
                         ) : (
                             <p className="bg-muted text-muted-foreground rounded-lg p-3 text-sm">
-                                Un QR code Wi-Fi contient le réseau lui-même : il ne passe pas par qrstats, ses scans ne sont donc pas comptés.
+                                Un QR code Wi-Fi contient le réseau lui-même : il ne passe pas par qrstats, ses scans ne
+                                sont donc pas comptés.
                             </p>
                         )}
                     </section>

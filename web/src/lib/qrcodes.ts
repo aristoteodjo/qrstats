@@ -5,14 +5,30 @@ import { request } from "@/lib/api"
 import { pageSchema, publicViewSchema, qrCodeSchema, qrSummarySchema } from "@/lib/qr"
 import type { Design, Kind } from "@/lib/qr"
 
-export type ListParams = { page: number; q?: string; status?: "active" | "paused" }
+export const SORTS = [
+    { value: "recent", label: "Plus récents" },
+    { value: "oldest", label: "Plus anciens" },
+    { value: "updated", label: "Récemment modifiés" },
+    { value: "name", label: "Nom (A à Z)" },
+    { value: "scans", label: "Plus scannés" },
+] as const
+export type Sort = (typeof SORTS)[number]["value"]
+
+export type ListParams = { page: number; q?: string; status?: "active" | "paused"; kind?: Kind; sort?: Sort }
 
 export const qrListQuery = (params: ListParams) =>
     queryOptions({
         queryKey: ["qrcodes", "list", params],
         queryFn: () =>
             request(pageSchema(qrSummarySchema), "/qrcodes", {
-                query: { page: params.page, per_page: 25, q: params.q, status: params.status },
+                query: {
+                    page: params.page,
+                    per_page: 25,
+                    q: params.q,
+                    status: params.status,
+                    kind: params.kind,
+                    sort: params.sort,
+                },
             }),
         placeholderData: keepPreviousData,
     })

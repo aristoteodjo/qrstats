@@ -1,4 +1,13 @@
-import { EyeIcon, GlobeIcon, LockIcon, MailIcon, MessageSquareIcon, PhoneIcon, QrCodeIcon, WifiIcon } from "lucide-react"
+import {
+    EyeIcon,
+    GlobeIcon,
+    LockIcon,
+    MailIcon,
+    MessageSquareIcon,
+    PhoneIcon,
+    QrCodeIcon,
+    WifiIcon,
+} from "lucide-react"
 import type { ReactNode } from "react"
 
 import { Initials } from "@/components/dash/initials"
@@ -25,7 +34,11 @@ export function PhonePreview({ kind, content, name, design, payload, mode, onMod
     return (
         <div className="grid justify-items-center gap-5">
             {kind ? (
-                <div role="radiogroup" aria-label="Aperçu" className="bg-card grid grid-cols-2 gap-1 rounded-full border-2 border-primary/30 p-1">
+                <div
+                    role="radiogroup"
+                    aria-label="Aperçu"
+                    className="bg-card grid grid-cols-2 gap-1 rounded-full border-2 border-primary/30 p-1"
+                >
                     {(
                         [
                             ["preview", "Aperçu", EyeIcon],
@@ -51,7 +64,10 @@ export function PhonePreview({ kind, content, name, design, payload, mode, onMod
             ) : null}
             <div className="bg-foreground w-full max-w-[290px] rounded-[2.75rem] p-2.5 shadow-xl">
                 <div className="bg-card relative flex aspect-[9/18.5] flex-col overflow-hidden rounded-[2.25rem]">
-                    <div aria-hidden="true" className="flex items-center justify-between px-6 pt-3 text-[11px] font-semibold">
+                    <div
+                        aria-hidden="true"
+                        className="flex items-center justify-between px-6 pt-3 text-[11px] font-semibold"
+                    >
                         <span>18:45</span>
                         <span className="bg-foreground h-5 w-20 rounded-full" />
                         <span className="flex gap-0.5">
@@ -63,14 +79,21 @@ export function PhonePreview({ kind, content, name, design, payload, mode, onMod
                             <Empty />
                         ) : mode === "qr" ? (
                             <div className="grid flex-1 place-items-center p-6">
-                                <QrImage design={design} data={payload} label={`Aperçu du QR code ${name}`} className="w-full" />
+                                <QrImage
+                                    design={design}
+                                    data={payload}
+                                    label={`Aperçu du QR code ${name}`}
+                                    className="w-full"
+                                />
                             </div>
                         ) : locked ? (
                             <Screen address="qrstats">
                                 <div className="grid place-items-center gap-3 px-4 pt-10 text-center">
                                     <LockIcon className="text-primary size-8" aria-hidden="true" />
                                     <p className="font-heading font-semibold">Contenu protégé</p>
-                                    <p className="text-muted-foreground text-xs">Le visiteur saisit le mot de passe avant d'y accéder.</p>
+                                    <p className="text-muted-foreground text-xs">
+                                        Le visiteur saisit le mot de passe avant d'y accéder.
+                                    </p>
                                 </div>
                             </Screen>
                         ) : (
@@ -162,7 +185,9 @@ function ContentPreview({ kind, content, name }: { kind: Kind; content: unknown;
                         </span>
                         <p className="font-heading font-semibold">{full}</p>
                         {c.title || c.organization ? (
-                            <p className="text-xs opacity-90">{[c.title, c.organization].filter(Boolean).join(" · ")}</p>
+                            <p className="text-xs opacity-90">
+                                {[c.title, c.organization].filter(Boolean).join(" · ")}
+                            </p>
                         ) : null}
                     </div>
                     <ul className="grid gap-2 p-3 text-xs">
@@ -212,7 +237,9 @@ function ContentPreview({ kind, content, name }: { kind: Kind; content: unknown;
                         <Icon className="size-6" aria-hidden="true" />
                     </span>
                     <p className="font-heading text-lg font-semibold">{c.phone || "+229 00 00 00 00"}</p>
-                    {"message" in c && c.message ? <p className="bg-muted rounded-xl px-3 py-2 text-xs">{c.message}</p> : null}
+                    {"message" in c && c.message ? (
+                        <p className="bg-muted rounded-xl px-3 py-2 text-xs">{c.message}</p>
+                    ) : null}
                 </div>
             )
         }

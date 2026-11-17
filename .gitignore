@@ -1,0 +1,13 @@
+.DS_Store
+account.md
+.env
+.env.local
+node_modules/
+web/.output/
+web/.nitro/
+web/.tanstack/
+web/.vercel/
+web/dist/
+api/tmp/
+api/.vercel/
+*.log

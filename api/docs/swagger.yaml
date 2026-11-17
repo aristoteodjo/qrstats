@@ -1,0 +1,433 @@
+basePath: /api/v1
+definitions:
+  dto.ErrorResponse:
+    properties:
+      code:
+        example: invalid
+        type: string
+      error:
+        example: Adresse invalide.
+        type: string
+      field:
+        example: content.url
+        type: string
+    type: object
+  handler.PublicView:
+    properties:
+      content:
+        type: object
+      kind:
+        type: string
+      locked:
+        type: boolean
+      name:
+        type: string
+      status:
+        type: string
+      target:
+        type: string
+    type: object
+  handler.QRCodePage:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/handler.QRSummaryView'
+        type: array
+      page:
+        type: integer
+      pages:
+        type: integer
+      per_page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  handler.QRCodeView:
+    properties:
+      content:
+        type: object
+      created_at:
+        type: string
+      design:
+        type: object
+      id:
+        type: string
+      kind:
+        type: string
+      name:
+        type: string
+      protected:
+        type: boolean
+      slug:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  handler.QRSummaryView:
+    properties:
+      content:
+        type: object
+      created_at:
+        type: string
+      design:
+        type: object
+      id:
+        type: string
+      kind:
+        type: string
+      last_scan_at:
+        type: string
+      name:
+        type: string
+      protected:
+        type: boolean
+      scans:
+        type: integer
+      slug:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  handler.unlockInput:
+    properties:
+      password:
+        type: string
+    type: object
+  service.Bucket:
+    properties:
+      count:
+        type: integer
+      key:
+        type: string
+    type: object
+  service.CreateInput:
+    properties:
+      content:
+        type: object
+      design:
+        type: object
+      kind:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    type: object
+  service.DayCount:
+    properties:
+      date:
+        type: string
+      scans:
+        type: integer
+      uniques:
+        type: integer
+    type: object
+  service.PatchInput:
+    properties:
+      content:
+        type: object
+      design:
+        type: object
+      kind:
+        type: string
+      name:
+        type: string
+      password:
+        description: 'Password: absent keeps it, "" removes it, anything else replaces
+          it.'
+        type: string
+      status:
+        type: string
+    type: object
+  service.Stats:
+    properties:
+      breakdowns:
+        additionalProperties:
+          items:
+            $ref: '#/definitions/service.Bucket'
+          type: array
+        type: object
+      from:
+        type: string
+      hours:
+        items:
+          type: integer
+        type: array
+      previous:
+        $ref: '#/definitions/service.DayCount'
+      scans:
+        type: integer
+      series:
+        items:
+          $ref: '#/definitions/service.DayCount'
+        type: array
+      to:
+        type: string
+      top_codes:
+        items:
+          $ref: '#/definitions/service.TopCode'
+        type: array
+      uniques:
+        type: integer
+      weekdays:
+        items:
+          type: integer
+        type: array
+    type: object
+  service.TopCode:
+    properties:
+      id:
+        type: string
+      kind:
+        type: string
+      name:
+        type: string
+      scans:
+        type: integer
+    type: object
+info:
+  contact: {}
+  description: 'Dynamic QR codes: the printed code points at /r/{slug}, its target
+    can change, every scan is counted.'
+  title: qrstats API
+  version: "1.0"
+paths:
+  /public/qr/{slug}:
+    get:
+      parameters:
+      - description: Printed slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.PublicView'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: What the landing page of a code may show (content hidden while locked
+        or paused)
+      tags:
+      - public
+  /public/qr/{slug}/unlock:
+    post:
+      parameters:
+      - description: Printed slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: Password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.unlockInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.PublicView'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Open a password-protected code
+      tags:
+      - public
+  /qrcodes:
+    get:
+      parameters:
+      - description: Page (1-based)
+        in: query
+        name: page
+        type: integer
+      - description: Rows per page (max 100)
+        in: query
+        name: per_page
+        type: integer
+      - description: Search in name, slug and content
+        in: query
+        name: q
+        type: string
+      - description: active or paused
+        in: query
+        name: status
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.QRCodePage'
+      security:
+      - BearerAuth: []
+      summary: List the caller's QR codes, newest first
+      tags:
+      - qrcodes
+    post:
+      parameters:
+      - description: QR code
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/service.CreateInput'
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.QRCodeView'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a QR code
+      tags:
+      - qrcodes
+  /qrcodes/{id}:
+    delete:
+      parameters:
+      - description: QR code id
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a QR code and its scans
+      tags:
+      - qrcodes
+    get:
+      parameters:
+      - description: QR code id
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.QRCodeView'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: One of the caller's QR codes
+      tags:
+      - qrcodes
+    patch:
+      parameters:
+      - description: QR code id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fields to change
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/service.PatchInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.QRCodeView'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Change what a QR code leads to, its look, its status or its password
+      tags:
+      - qrcodes
+  /r/{slug}:
+    get:
+      description: A link code goes straight to its target (with UTM parameters);
+        every other case lands on the web page /q/{slug}.
+      parameters:
+      - description: Printed slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Found
+      summary: 'What a printed code opens: counts the scan, then redirects'
+      tags:
+      - public
+  /stats:
+    get:
+      parameters:
+      - description: Narrow to one QR code
+        in: query
+        name: qr_code_id
+        type: string
+      - description: 'First day, YYYY-MM-DD (default: 29 days before to)'
+        in: query
+        name: from
+        type: string
+      - description: 'Last day, YYYY-MM-DD (default: today)'
+        in: query
+        name: to
+        type: string
+      - description: IANA time zone the days are read in (default UTC)
+        in: query
+        name: tz
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/service.Stats'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Scan statistics over a period, for every code of the caller or one
+        of them
+      tags:
+      - stats
+securityDefinitions:
+  BearerAuth:
+    description: Better Auth JWT (EdDSA), sent as "Bearer <token>".
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

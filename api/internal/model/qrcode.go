@@ -22,8 +22,11 @@ type QRCode struct {
 	Design       json.RawMessage `gorm:"type:jsonb;not null" json:"design" swaggertype:"object"`
 	Status       string          `gorm:"size:16;not null;default:active" json:"status"`
 	PasswordHash string          `gorm:"size:100;not null;default:''" json:"-"`
-	CreatedAt    time.Time       `gorm:"not null" json:"created_at"`
-	UpdatedAt    time.Time       `gorm:"not null" json:"updated_at"`
+	// Failed unlocks in the current window, shared by every API instance: the per-code cap on password guessing.
+	UnlockFailures    int        `gorm:"not null;default:0" json:"-"`
+	UnlockWindowStart *time.Time `json:"-"`
+	CreatedAt         time.Time  `gorm:"not null" json:"created_at"`
+	UpdatedAt         time.Time  `gorm:"not null" json:"updated_at"`
 }
 
 func (QRCode) TableName() string { return "qr_codes" }

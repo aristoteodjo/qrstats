@@ -185,11 +185,16 @@ func TestClientIPAndLocationTrustOnlyBehindProxy(t *testing.T) {
 	h.Set("X-Forwarded-For", "198.51.100.1, 10.0.0.1")
 	h.Set("X-Vercel-IP-Country", "bj")
 	h.Set("X-Vercel-IP-City", "Cotonou%20Centre")
-	if got := ClientIP(h, "10.0.0.2:5555", false); got != "10.0.0.2" {
+	h.Set("X-Vercel-Forwarded-For", "203.0.113.9")
+	if got := ClientIP(h, "10.0.0.2:5555", ""); got != "10.0.0.2" {
 		t.Fatalf("untrusted ClientIP = %q", got)
 	}
-	if got := ClientIP(h, "10.0.0.2:5555", true); got != "198.51.100.1" {
-		t.Fatalf("trusted ClientIP = %q", got)
+	if got := ClientIP(h, "10.0.0.2:5555", "X-Vercel-Forwarded-For"); got != "203.0.113.9" {
+		t.Fatalf("edge header ClientIP = %q", got)
+	}
+	h.Del("X-Vercel-Forwarded-For")
+	if got := ClientIP(h, "10.0.0.2:5555", "X-Vercel-Forwarded-For"); got != "10.0.0.2" {
+		t.Fatalf("a forged X-Forwarded-For must be ignored, got %q", got)
 	}
 	if c, city := Location(h, false); c != "" || city != "" {
 		t.Fatal("untrusted location must be empty")

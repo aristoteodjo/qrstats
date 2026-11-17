@@ -2,8 +2,10 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
@@ -42,6 +44,9 @@ func (s *QRCodeStore) List(ctx context.Context, owner string, filter service.Lis
 	if filter.Status != "" {
 		base = base.Where("qr_codes.status = ?", filter.Status)
 	}
+	if filter.Kind != "" {
+		base = base.Where("qr_codes.kind = ?", filter.Kind)
+	}
 	if filter.Search != "" {
 		like := "%" + escapeLike(filter.Search) + "%"
 		base = base.Where("(qr_codes.name ILIKE ? OR qr_codes.slug ILIKE ? OR qr_codes.content::text ILIKE ?)", like, like, like)
@@ -54,10 +59,25 @@ func (s *QRCodeStore) List(ctx context.Context, owner string, filter service.Lis
 	err := base.
 		Select("qr_codes.*, COALESCE(s.scans, 0) AS scans, s.last_scan_at").
 		Joins("LEFT JOIN (SELECT qr_code_id, COUNT(*) AS scans, MAX(at) AS last_scan_at FROM scans GROUP BY qr_code_id) s ON s.qr_code_id = qr_codes.id").
-		Order("qr_codes.created_at DESC, qr_codes.id DESC").
+		Order(orderFor(filter.Sort) + ", qr_codes.id DESC").
 		Offset((filter.Page - 1) * filter.PerPage).Limit(filter.PerPage).
 		Scan(&rows).Error
 	return rows, total, err
+}
+
+var listOrder = map[string]string{
+	"recent":  "qr_codes.created_at DESC",
+	"oldest":  "qr_codes.created_at ASC",
+	"updated": "qr_codes.updated_at DESC",
+	"name":    "lower(qr_codes.name) ASC",
+	"scans":   "COALESCE(s.scans, 0) DESC",
+}
+
+func orderFor(sort string) string {
+	if order, ok := listOrder[sort]; ok {
+		return order
+	}
+	return listOrder["recent"]
 }
 
 func (s *QRCodeStore) Update(ctx context.Context, qr *model.QRCode) error {
@@ -85,6 +105,19 @@ func (s *QRCodeStore) Delete(ctx context.Context, owner, id string) error {
 		return service.ErrNotFound
 	}
 	return nil
+}
+
+// RecordUnlockFailure is one atomic UPDATE, so concurrent instances never lose a count.
+func (s *QRCodeStore) RecordUnlockFailure(ctx context.Context, id string, now time.Time, window time.Duration) (int, error) {
+	var count int
+	err := s.db.WithContext(ctx).Raw(`
+		UPDATE qr_codes SET
+			unlock_failures = CASE WHEN unlock_window_start IS NULL OR unlock_window_start <= @expired THEN 1 ELSE unlock_failures + 1 END,
+			unlock_window_start = CASE WHEN unlock_window_start IS NULL OR unlock_window_start <= @expired THEN @now ELSE unlock_window_start END
+		WHERE id = @id
+		RETURNING unlock_failures`,
+		sql.Named("expired", now.Add(-window)), sql.Named("now", now), sql.Named("id", id)).Scan(&count).Error
+	return count, err
 }
 
 func found(qr *model.QRCode, err error) (*model.QRCode, error) {

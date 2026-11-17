@@ -45,17 +45,21 @@ type ScanStore interface {
 }
 
 type Scans struct {
-	store  ScanStore
-	secret string
-	trust  bool
-	now    func() time.Time
+	store    ScanStore
+	secret   string
+	trust    bool
+	ipHeader string
+	now      func() time.Time
 }
 
-func NewScans(store ScanStore, visitorSecret string, trustProxyHeaders bool, now func() time.Time) *Scans {
+func NewScans(store ScanStore, visitorSecret string, trustProxyHeaders bool, ipHeader string, now func() time.Time) *Scans {
 	if now == nil {
 		now = time.Now
 	}
-	return &Scans{store: store, secret: visitorSecret, trust: trustProxyHeaders, now: now}
+	if !trustProxyHeaders {
+		ipHeader = ""
+	}
+	return &Scans{store: store, secret: visitorSecret, trust: trustProxyHeaders, ipHeader: ipHeader, now: now}
 }
 
 // ScanRequest is the part of an HTTP request a scan is made of.
@@ -80,7 +84,7 @@ func (s *Scans) BuildScan(qr *model.QRCode, req ScanRequest, campaign Campaign) 
 	}
 	return &model.Scan{
 		ID: id.String(), QRCodeID: qr.ID, At: at,
-		Visitor: VisitorHash(s.secret, ClientIP(req.Header, req.RemoteAddr, s.trust), userAgent, at),
+		Visitor: VisitorHash(s.secret, ClientIP(req.Header, req.RemoteAddr, s.ipHeader), userAgent, at),
 		Device:  client.Device, OS: client.OS, Browser: client.Browser, Language: client.Language,
 		Referrer: client.Referrer, Country: country, City: city,
 		UTMSource: campaign.Source, UTMMedium: campaign.Medium, UTMCampaign: campaign.Campaign,

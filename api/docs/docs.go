@@ -127,6 +127,18 @@ const docTemplate = `{
                         "description": "active or paused",
                         "name": "status",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "url, text, vcard, wifi, email, phone or sms",
+                        "name": "kind",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "recent (default), oldest, updated, name or scans",
+                        "name": "sort",
+                        "in": "query"
                     }
                 ],
                 "responses": {

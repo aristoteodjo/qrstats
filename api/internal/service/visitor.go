@@ -19,13 +19,12 @@ func VisitorHash(secret, ip, userAgent string, at time.Time) string {
 	return hex.EncodeToString(mac.Sum(nil))[:32]
 }
 
-// ClientIP trusts forwarding headers only behind a platform that sets them; otherwise any caller could forge them.
-func ClientIP(header http.Header, remoteAddr string, trustProxy bool) string {
-	if trustProxy {
-		for _, name := range []string{"X-Vercel-Forwarded-For", "CF-Connecting-IP", "X-Real-IP", "X-Forwarded-For"} {
-			if value := strings.TrimSpace(strings.Split(header.Get(name), ",")[0]); net.ParseIP(value) != nil {
-				return value
-			}
+// ClientIP reads one header, the one the edge overwrites (ipHeader), and only behind that edge: any other
+// forwarding header is whatever the caller chose to send.
+func ClientIP(header http.Header, remoteAddr, ipHeader string) string {
+	if ipHeader != "" {
+		if value := strings.TrimSpace(strings.Split(header.Get(ipHeader), ",")[0]); net.ParseIP(value) != nil {
+			return value
 		}
 	}
 	host, _, err := net.SplitHostPort(remoteAddr)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 	"strings"
 	"time"
 
@@ -15,9 +16,14 @@ import (
 
 var ErrSlugTaken = errors.New("slug taken")
 
+// ListSorts are the orders a list may be read in; the store maps each to SQL, nothing else reaches it.
+var ListSorts = []string{"recent", "oldest", "updated", "name", "scans"}
+
 type ListFilter struct {
 	Search  string
 	Status  string
+	Kind    string
+	Sort    string
 	Page    int
 	PerPage int
 }
@@ -36,7 +42,17 @@ type QRStore interface {
 	List(ctx context.Context, owner string, filter ListFilter) ([]QRSummary, int64, error)
 	Update(ctx context.Context, qr *model.QRCode) error
 	Delete(ctx context.Context, owner, id string) error
+	// RecordUnlockFailure counts one failed password for a code, in a window shared by every instance, and returns
+	// the count in the current window.
+	RecordUnlockFailure(ctx context.Context, id string, now time.Time, window time.Duration) (int, error)
 }
+
+const (
+	// Global cap per code, whatever the caller's address: 30 wrong passwords per 15 minutes. A determined attacker
+	// can keep a code locked for legitimate visitors; that is the price of making guessing impractical.
+	UnlockMaxFailures = 30
+	UnlockWindow      = 15 * time.Minute
+)
 
 type QRCodes struct {
 	store QRStore
@@ -204,6 +220,12 @@ func (s *QRCodes) List(ctx context.Context, owner string, filter ListFilter) ([]
 	if filter.Status != model.StatusActive && filter.Status != model.StatusPaused {
 		filter.Status = ""
 	}
+	if !ValidKind(filter.Kind) {
+		filter.Kind = ""
+	}
+	if !slices.Contains(ListSorts, filter.Sort) {
+		filter.Sort = "recent"
+	}
 	return s.store.List(ctx, owner, filter)
 }
 
@@ -250,10 +272,17 @@ func (s *QRCodes) Unlock(ctx context.Context, slug, password, attemptKey string)
 	if !view.Locked {
 		return view, nil
 	}
+	now := s.now().UTC()
+	if qr.UnlockWindowStart != nil && now.Sub(*qr.UnlockWindowStart) < UnlockWindow && qr.UnlockFailures >= UnlockMaxFailures {
+		return Public{}, ErrTooManyTries
+	}
 	if !s.unlocks.Allow(attemptKey + "|" + slug) {
 		return Public{}, ErrTooManyTries
 	}
 	if bcrypt.CompareHashAndPassword([]byte(qr.PasswordHash), []byte(strings.TrimSpace(password))) != nil {
+		if _, err := s.store.RecordUnlockFailure(ctx, qr.ID, now, UnlockWindow); err != nil {
+			return Public{}, err
+		}
 		return Public{}, ErrWrongPassword
 	}
 	view.Locked = false

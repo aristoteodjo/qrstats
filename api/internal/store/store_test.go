@@ -87,12 +87,27 @@ func TestStoresIsolateOwnersAndAggregate(t *testing.T) {
 		t.Fatalf("top codes = %+v", rows.TopCodes)
 	}
 
+	now := time.Now().UTC()
+	for want := 1; want <= 3; want++ {
+		if got, err := codes.RecordUnlockFailure(ctx, bob.ID, now, time.Minute); err != nil || got != want {
+			t.Fatalf("failure count = %d, %v; want %d", got, err, want)
+		}
+	}
+	if got, _ := codes.RecordUnlockFailure(ctx, bob.ID, now.Add(2*time.Minute), time.Minute); got != 1 {
+		t.Fatalf("a new window restarts the count, got %d", got)
+	}
+
 	if _, err := codes.Get(ctx, "bob", alice.ID); !errors.Is(err, service.ErrNotFound) {
 		t.Fatalf("bob reads alice's code: %v", err)
 	}
 	list, total, err := codes.List(ctx, "alice", service.ListFilter{Page: 1, PerPage: 25})
 	if err != nil || total != 1 || list[0].Scans != 3 {
 		t.Fatalf("alice list = %+v (%d) %v", list, total, err)
+	}
+	for _, sort := range []string{"recent", "oldest", "updated", "name", "scans"} {
+		if _, _, err := codes.List(ctx, "alice", service.ListFilter{Page: 1, PerPage: 25, Sort: sort, Kind: "url"}); err != nil {
+			t.Fatalf("sort %s: %v", sort, err)
+		}
 	}
 	if err := codes.Delete(ctx, "bob", alice.ID); !errors.Is(err, service.ErrNotFound) {
 		t.Fatalf("bob deletes alice's code: %v", err)

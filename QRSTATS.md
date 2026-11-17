@@ -31,7 +31,7 @@ Better Auth dans `web/` (email + mot de passe, tables dans le schéma Postgres `
 Prêt pour la production, ou ça ne part pas.
 
 - **Exactitude** : un bot ou un aperçu de messagerie n'est jamais un scan ; un jour se lit dans le fuseau du lecteur (`tz`) ; une série n'a jamais de trou (`FillSeries`).
-- **Sécurité** : isolation stricte par propriétaire (un code d'un autre répond 404, comme un code inexistant). Destinations http(s) uniquement. Slugs tirés de `crypto/rand`. Mot de passe bcrypt, essais bornés par IP et slug. En-têtes de proxy (IP, géoloc) lus seulement si `TRUST_PROXY_HEADERS=true`.
+- **Sécurité** : isolation stricte par propriétaire (un code d'un autre répond 404, comme un code inexistant). Destinations http(s) uniquement. Slugs tirés de `crypto/rand`. Mot de passe de code : 6 à 72 caractères, bcrypt ; essais bornés deux fois : 10 par IP et slug (mémoire de l'instance) et **30 échecs par code sur 15 min, toutes IP confondues, compteur partagé en base** (`qr_codes.unlock_failures`, une seule requête UPDATE atomique). Prix accepté : un attaquant peut bloquer un code protégé pour ses visiteurs pendant 15 min. IP client lue dans **un seul** en-tête, celui que l'edge réécrit (`CLIENT_IP_HEADER`, défaut `X-Vercel-Forwarded-For`), et seulement si `TRUST_PROXY_HEADERS=true` ; tout autre en-tête de transfert est ignoré.
 - **Vie privée** : aucune IP stockée. Visiteur unique = HMAC(`VISITOR_SECRET`, jour UTC | IP | UA), qui change chaque jour. « Uniques » sur une période = somme des uniques par jour.
 - **Performance** : `/r/<slug>` fait une lecture par slug (index unique) et une écriture, `Cache-Control: no-store`. Statistiques agrégées en SQL, index `(qr_code_id, at)`.
 - **Architecture** : métier dans des fonctions pures (`api/internal/service/*.go` hors `qrcodes.go`/`scans.go` qui orchestrent ; `web/src/lib/*.ts`). Handlers et composants minces.
@@ -97,6 +97,7 @@ Vercel, deux projets : `web/` (TanStack Start, Nitro) et `api/` (fonction Go `ap
 1. Socle : ce document, outillage, composants partagés, coque (sidebar shadcn), pages obligatoires, auth. **Fait (2026-11-18).**
 2. QR codes dynamiques : assistant 3 étapes (type, contenu, aspect), aperçu téléphone, destination modifiable, pause, mot de passe, téléchargement PNG/SVG, page de scan. **Fait (2026-11-18).**
 3. Suivi des scans et analyses (globales et par code). **Fait (2026-11-18).**
+3b. Liste des QR codes en cartes (miniature, lien court, destination, scans, dates, statut, partage, téléchargement), filtres statut/type, tri, actions groupées, renommage. **Fait (2026-11-18).**
 4. Vérification visuelle dans le navigateur (non faite : voir Pièges connus).
 5. Export CSV des scans, comparaison de codes, filtres par pays/appareil dans les analyses.
 6. Facturation et limites par offre (si décidé).
@@ -107,6 +108,7 @@ Vercel, deux projets : `web/` (TanStack Start, Nitro) et `api/` (fonction Go `ap
 - 2026-11-18 : backend Go (gin, gorm, Postgres) pour la redirection et le suivi ; comptes personnels ; espaces site + app. + domaine court de l'API ; déploiement Vercel.
 - 2026-11-18 : tracking : scans, uniques (sans IP), appareil/OS/navigateur, pays/ville (en-têtes de la plateforme), langue, provenance, UTM, heure et jour de semaine, comparaison avec la période précédente.
 - 2026-11-18 : shadcn en variante Radix (comme charlomi, dont les composants sont copiés), pas Base UI.
+- 2026-11-18 : liste calquée sur la capture MyQRCode ; bandeau « Essai gratuit », sondage et compteur de jours d'essai non repris tant que l'offre n'est pas décidée.
 - 2026-11-18 : pas de champ téléphone international (phone-input de charlomi non copié) : l'auth est email + mot de passe.
 
 ### Ouvertes (ne pas trancher à la place du porteur du projet)

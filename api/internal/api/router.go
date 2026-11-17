@@ -46,7 +46,11 @@ func New(cfg *config.Config, log zerolog.Logger, db *gorm.DB, deps Deps) *gin.En
 		engine.GET("/swagger/*any", ginswagger.WrapHandler(swaggerfiles.Handler))
 	}
 
-	public := handler.NewPublic(deps.Codes, deps.Scans, cfg.WebURL, cfg.TrustProxyHeaders, log)
+	ipHeader := ""
+	if cfg.TrustProxyHeaders {
+		ipHeader = cfg.ClientIPHeader
+	}
+	public := handler.NewPublic(deps.Codes, deps.Scans, cfg.WebURL, ipHeader, log)
 	engine.GET("/r/:slug", public.Redirect)
 
 	v1 := engine.Group("/api/v1")

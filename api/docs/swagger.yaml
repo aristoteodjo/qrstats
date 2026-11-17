@@ -266,6 +266,14 @@ paths:
         in: query
         name: status
         type: string
+      - description: url, text, vcard, wifi, email, phone or sms
+        in: query
+        name: kind
+        type: string
+      - description: recent (default), oldest, updated, name or scans
+        in: query
+        name: sort
+        type: string
       responses:
         "200":
           description: OK

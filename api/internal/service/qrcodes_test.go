@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -83,6 +84,18 @@ func (m *memoryStore) Delete(_ context.Context, owner, id string) error {
 	}
 	delete(m.codes, id)
 	return nil
+}
+
+func (m *memoryStore) RecordUnlockFailure(_ context.Context, id string, now time.Time, window time.Duration) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	c := m.codes[id]
+	if c.UnlockWindowStart == nil || now.Sub(*c.UnlockWindowStart) >= window {
+		c.UnlockWindowStart, c.UnlockFailures = &now, 0
+	}
+	c.UnlockFailures++
+	m.codes[id] = c
+	return c.UnlockFailures, nil
 }
 
 func newTestService() *QRCodes {
@@ -168,12 +181,20 @@ func TestPasswordLockAndUnlock(t *testing.T) {
 		t.Fatalf("attempts must be bounded: %v", err)
 	}
 
+	// The per-code cap holds even when every guess comes from a different address.
+	for i := 0; i < UnlockMaxFailures; i++ {
+		_, _ = s.Unlock(ctx, qr.Slug, "wrong", fmt.Sprintf("ip-%d", i))
+	}
+	if _, err := s.Unlock(ctx, qr.Slug, "sesame", "fresh-ip"); !errors.Is(err, ErrTooManyTries) {
+		t.Fatalf("rotating addresses must not bypass the per-code cap: %v", err)
+	}
+
 	empty := ""
 	updated, _ := s.Update(ctx, "alice", qr.ID, PatchInput{Password: &empty})
 	if PublicView(updated).Locked {
 		t.Fatal("an empty password removes the lock")
 	}
-	if _, err := s.Create(ctx, "alice", CreateInput{Kind: KindWifi, Content: json.RawMessage(`{"ssid":"x","encryption":"nopass"}`), Password: "abcd"}); err == nil {
+	if _, err := s.Create(ctx, "alice", CreateInput{Kind: KindWifi, Content: json.RawMessage(`{"ssid":"x","encryption":"nopass"}`), Password: "abcdef"}); err == nil {
 		t.Fatal("a Wi-Fi code cannot be locked")
 	}
 }

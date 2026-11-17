@@ -83,7 +83,9 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
             if (!isQr(saved)) return
             void queryClient.invalidateQueries({ queryKey: ["qrcodes"] })
             void queryClient.invalidateQueries({ queryKey: ["stats"] })
-            toast.success(editing ? "QR code mis à jour. Le code imprimé mène déjà au nouveau contenu." : "QR code créé.")
+            toast.success(
+                editing ? "QR code mis à jour. Le code imprimé mène déjà au nouveau contenu." : "QR code créé.",
+            )
             void navigate({ to: "/qr-codes/$id", params: { id: saved.id } })
         },
         onError: (error) => {
@@ -146,13 +148,7 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
                               : "Personnalisez l'aspect"}
                     </h1>
 
-                    {step === 1 ? (
-                        <KindPicker
-                            current={kind}
-                            lockedToDynamic={editing}
-                            onPick={chooseKind}
-                        />
-                    ) : null}
+                    {step === 1 ? <KindPicker current={kind} lockedToDynamic={editing} onPick={chooseKind} /> : null}
 
                     {step === 2 && kind ? (
                         <Accordion type="multiple" defaultValue={["content", "name"]} className="grid gap-4">
@@ -177,27 +173,63 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
                                 >
                                     <div className="grid gap-4 sm:grid-cols-3">
                                         <form.AppField name="content.url.utm_source">
-                                            {(field) => <field.TextField label="Source" placeholder="flyer" maxLength={80} className="h-11" />}
+                                            {(field) => (
+                                                <field.TextField
+                                                    label="Source"
+                                                    placeholder="flyer"
+                                                    maxLength={80}
+                                                    className="h-11"
+                                                />
+                                            )}
                                         </form.AppField>
                                         <form.AppField name="content.url.utm_medium">
-                                            {(field) => <field.TextField label="Support" placeholder="print" maxLength={80} className="h-11" />}
+                                            {(field) => (
+                                                <field.TextField
+                                                    label="Support"
+                                                    placeholder="print"
+                                                    maxLength={80}
+                                                    className="h-11"
+                                                />
+                                            )}
                                         </form.AppField>
                                         <form.AppField name="content.url.utm_campaign">
-                                            {(field) => <field.TextField label="Campagne" placeholder="soldes-hiver" maxLength={80} className="h-11" />}
+                                            {(field) => (
+                                                <field.TextField
+                                                    label="Campagne"
+                                                    placeholder="soldes-hiver"
+                                                    maxLength={80}
+                                                    className="h-11"
+                                                />
+                                            )}
                                         </form.AppField>
                                     </div>
                                     <p className="text-muted-foreground text-sm">
-                                        Astuce : imprimez des variantes en ajoutant <code className="font-mono">?utm_source=…</code> au
-                                        lien court. Chaque variante est comptée à part dans les statistiques.
+                                        Astuce : imprimez des variantes en ajoutant{" "}
+                                        <code className="font-mono">?utm_source=…</code> au lien court. Chaque variante
+                                        est comptée à part dans les statistiques.
                                     </p>
                                 </EditorSection>
                             ) : null}
-                            <EditorSection value="name" icon={PencilIcon} title="Nom du QR code" description="Pour le retrouver dans votre liste (facultatif)">
+                            <EditorSection
+                                value="name"
+                                icon={PencilIcon}
+                                title="Nom du QR code"
+                                description="Pour le retrouver dans votre liste (facultatif)"
+                            >
                                 <form.AppField
                                     name="name"
-                                    validators={{ onSubmit: ({ value }) => (value.length > 120 ? "120 caractères au maximum." : undefined) }}
+                                    validators={{
+                                        onSubmit: ({ value }) =>
+                                            value.length > 120 ? "120 caractères au maximum." : undefined,
+                                    }}
                                 >
-                                    {(field) => <field.TextField label="Nom du QR code" placeholder="p. ex., Menu du restaurant" className="h-11" />}
+                                    {(field) => (
+                                        <field.TextField
+                                            label="Nom du QR code"
+                                            placeholder="p. ex., Menu du restaurant"
+                                            className="h-11"
+                                        />
+                                    )}
                                 </form.AppField>
                             </EditorSection>
                         </Accordion>
@@ -207,7 +239,12 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
                         <Accordion type="multiple" defaultValue={["frame"]} className="grid gap-4">
                             <DesignSections design={design} onChange={setDesign} />
                             {isDynamic(kind) ? (
-                                <EditorSection value="password" icon={LockIcon} title="Mot de passe" description="Demander un mot de passe pour ouvrir ce QR code">
+                                <EditorSection
+                                    value="password"
+                                    icon={LockIcon}
+                                    title="Mot de passe"
+                                    description="Demander un mot de passe pour ouvrir ce QR code"
+                                >
                                     <PasswordFields form={form} alreadyProtected={existing?.protected ?? false} />
                                 </EditorSection>
                             ) : null}
@@ -255,7 +292,10 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
                     <ArrowLeftIcon aria-hidden />
                     Retour
                 </Button>
-                <nav aria-label="Étapes" className="order-last flex w-full justify-center md:order-none md:w-auto md:flex-1">
+                <nav
+                    aria-label="Étapes"
+                    className="order-last flex w-full justify-center md:order-none md:w-auto md:flex-1"
+                >
                     <ol className="flex flex-wrap items-center gap-1">
                         {STEPS.map((item, index) => {
                             const done = item.step < step
@@ -272,7 +312,9 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
                                         }}
                                         className={cn(
                                             "flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm disabled:cursor-default",
-                                            current ? "font-medium" : "text-muted-foreground enabled:hover:text-foreground",
+                                            current
+                                                ? "font-medium"
+                                                : "text-muted-foreground enabled:hover:text-foreground",
                                         )}
                                     >
                                         <span
@@ -314,7 +356,15 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
     )
 }
 
-function KindPicker({ current, lockedToDynamic, onPick }: { current: Kind | null; lockedToDynamic: boolean; onPick: (kind: Kind) => void }) {
+function KindPicker({
+    current,
+    lockedToDynamic,
+    onPick,
+}: {
+    current: Kind | null
+    lockedToDynamic: boolean
+    onPick: (kind: Kind) => void
+}) {
     return (
         <div className="grid gap-4 md:grid-cols-2">
             {KINDS.filter((kind) => !lockedToDynamic || isDynamic(kind)).map((kind) => (
@@ -333,7 +383,9 @@ function KindPicker({ current, lockedToDynamic, onPick }: { current: Kind | null
                         <span className="font-heading text-lg font-semibold">{KIND_LABELS[kind].title}</span>
                         <span className="text-muted-foreground text-sm">{KIND_LABELS[kind].hint}</span>
                     </span>
-                    {kind === "url" ? <Badge className="absolute -top-2.5 right-4 text-[10px] uppercase">Le plus utilisé</Badge> : null}
+                    {kind === "url" ? (
+                        <Badge className="absolute -top-2.5 right-4 text-[10px] uppercase">Le plus utilisé</Badge>
+                    ) : null}
                 </button>
             ))}
         </div>
@@ -368,7 +420,14 @@ function ContentFields({ form, kind }: { form: EditorForm; kind: Kind }) {
             )
         case "text":
             return (
-                <form.AppField name="content.text.text" validators={of((v) => requiredProblem(v, "Le texte est obligatoire.") ?? (v.length > 2000 ? "2000 caractères au maximum." : undefined))}>
+                <form.AppField
+                    name="content.text.text"
+                    validators={of(
+                        (v) =>
+                            requiredProblem(v, "Le texte est obligatoire.") ??
+                            (v.length > 2000 ? "2000 caractères au maximum." : undefined),
+                    )}
+                >
                     {(field) => <field.TextareaField label="Texte *" rows={6} maxLength={2000} />}
                 </form.AppField>
             )
@@ -393,18 +452,29 @@ function ContentFields({ form, kind }: { form: EditorForm; kind: Kind }) {
                         {(field) => <field.TextField label="Nom" autoComplete="family-name" className="h-11" />}
                     </form.AppField>
                     <form.AppField name="content.vcard.organization">
-                        {(field) => <field.TextField label="Organisation" autoComplete="organization" className="h-11" />}
+                        {(field) => (
+                            <field.TextField label="Organisation" autoComplete="organization" className="h-11" />
+                        )}
                     </form.AppField>
                     <form.AppField name="content.vcard.title">
-                        {(field) => <field.TextField label="Fonction" autoComplete="organization-title" className="h-11" />}
+                        {(field) => (
+                            <field.TextField label="Fonction" autoComplete="organization-title" className="h-11" />
+                        )}
                     </form.AppField>
                     <form.AppField name="content.vcard.phone" validators={of((v) => phoneProblem(v, false))}>
-                        {(field) => <field.TextField label="Téléphone" type="tel" autoComplete="tel" className="h-11" />}
+                        {(field) => (
+                            <field.TextField label="Téléphone" type="tel" autoComplete="tel" className="h-11" />
+                        )}
                     </form.AppField>
                     <form.AppField name="content.vcard.email" validators={of((v) => emailProblem(v, false))}>
-                        {(field) => <field.TextField label="E-mail" type="email" autoComplete="email" className="h-11" />}
+                        {(field) => (
+                            <field.TextField label="E-mail" type="email" autoComplete="email" className="h-11" />
+                        )}
                     </form.AppField>
-                    <form.AppField name="content.vcard.website" validators={of((v) => (v.trim() ? urlProblem(v) : undefined))}>
+                    <form.AppField
+                        name="content.vcard.website"
+                        validators={of((v) => (v.trim() ? urlProblem(v) : undefined))}
+                    >
                         {(field) => <field.TextField label="Site web" inputMode="url" className="h-11" />}
                     </form.AppField>
                     <form.AppField name="content.vcard.address">
@@ -420,7 +490,10 @@ function ContentFields({ form, kind }: { form: EditorForm; kind: Kind }) {
         case "wifi":
             return (
                 <div className="grid gap-4 sm:grid-cols-2">
-                    <form.AppField name="content.wifi.ssid" validators={of((v) => requiredProblem(v, "Le nom du réseau est obligatoire."))}>
+                    <form.AppField
+                        name="content.wifi.ssid"
+                        validators={of((v) => requiredProblem(v, "Le nom du réseau est obligatoire."))}
+                    >
                         {(field) => <field.TextField label="Nom du réseau (SSID) *" className="h-11" />}
                     </form.AppField>
                     <form.AppField name="content.wifi.encryption">
@@ -446,7 +519,13 @@ function ContentFields({ form, kind }: { form: EditorForm; kind: Kind }) {
                                             : requiredProblem(v, "Le mot de passe du réseau est obligatoire."),
                                     )}
                                 >
-                                    {(field) => <field.TextField label="Mot de passe du réseau *" className="h-11" autoComplete="off" />}
+                                    {(field) => (
+                                        <field.TextField
+                                            label="Mot de passe du réseau *"
+                                            className="h-11"
+                                            autoComplete="off"
+                                        />
+                                    )}
                                 </form.AppField>
                             )
                         }
@@ -473,14 +552,29 @@ function ContentFields({ form, kind }: { form: EditorForm; kind: Kind }) {
         case "phone":
             return (
                 <form.AppField name="content.phone.phone" validators={of((v) => phoneProblem(v))}>
-                    {(field) => <field.TextField label="Numéro de téléphone *" type="tel" autoComplete="tel" placeholder="+229 97 00 00 00" className="h-11" />}
+                    {(field) => (
+                        <field.TextField
+                            label="Numéro de téléphone *"
+                            type="tel"
+                            autoComplete="tel"
+                            placeholder="+229 97 00 00 00"
+                            className="h-11"
+                        />
+                    )}
                 </form.AppField>
             )
         case "sms":
             return (
                 <div className="grid gap-4">
                     <form.AppField name="content.sms.phone" validators={of((v) => phoneProblem(v))}>
-                        {(field) => <field.TextField label="Numéro de téléphone *" type="tel" placeholder="+229 97 00 00 00" className="h-11" />}
+                        {(field) => (
+                            <field.TextField
+                                label="Numéro de téléphone *"
+                                type="tel"
+                                placeholder="+229 97 00 00 00"
+                                className="h-11"
+                            />
+                        )}
                     </form.AppField>
                     <form.AppField name="content.sms.message">
                         {(field) => <field.TextareaField label="Message prérempli" rows={3} maxLength={500} />}
@@ -512,7 +606,9 @@ function PasswordFields({ form, alreadyProtected }: { form: EditorForm; alreadyP
                                 onSubmit: ({ value }) => {
                                     if (!form.getFieldValue("protect")) return undefined
                                     if (!value && alreadyProtected) return undefined
-                                    return value.length < 4 || value.length > 72 ? "Entre 4 et 72 caractères." : undefined
+                                    return value.length < 6 || value.length > 72
+                                        ? "Entre 6 et 72 caractères."
+                                        : undefined
                                 },
                             }}
                         >
@@ -522,7 +618,11 @@ function PasswordFields({ form, alreadyProtected }: { form: EditorForm; alreadyP
                                     type="password"
                                     autoComplete="new-password"
                                     className="h-11 max-w-sm"
-                                    description={alreadyProtected ? "Laissez vide pour garder le mot de passe actuel." : "À communiquer aux personnes autorisées."}
+                                    description={
+                                        alreadyProtected
+                                            ? "Laissez vide pour garder le mot de passe actuel."
+                                            : "À communiquer aux personnes autorisées."
+                                    }
                                 />
                             )}
                         </form.AppField>

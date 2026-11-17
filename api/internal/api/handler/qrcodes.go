@@ -54,12 +54,15 @@ func view(qr *model.QRCode) QRCodeView {
 //	@Param		per_page	query		int		false	"Rows per page (max 100)"
 //	@Param		q			query		string	false	"Search in name, slug and content"
 //	@Param		status		query		string	false	"active or paused"
+//	@Param		kind		query		string	false	"url, text, vcard, wifi, email, phone or sms"
+//	@Param		sort		query		string	false	"recent (default), oldest, updated, name or scans"
 //	@Success	200			{object}	QRCodePage
 //	@Router		/qrcodes [get]
 func (h *QRCodes) List(c *gin.Context) {
 	page, perPage := dto.ParsePagination(c)
 	rows, total, err := h.codes.List(c.Request.Context(), middleware.Owner(c), service.ListFilter{
-		Search: c.Query("q"), Status: c.Query("status"), Page: page, PerPage: perPage,
+		Search: c.Query("q"), Status: c.Query("status"), Kind: c.Query("kind"), Sort: c.Query("sort"),
+		Page: page, PerPage: perPage,
 	})
 	if err != nil {
 		fail(c, h.log, err)

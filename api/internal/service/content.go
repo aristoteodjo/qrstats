@@ -270,8 +270,8 @@ func KindLabel(kind string) string {
 
 // ValidatePassword: bcrypt reads 72 bytes at most, a longer password would silently match its own prefix.
 func ValidatePassword(password string) error {
-	if len(password) < 4 || len(password) > 72 {
-		return invalid("password", "Entre 4 et 72 caractères.")
+	if len(password) < 6 || len(password) > 72 {
+		return invalid("password", "Entre 6 et 72 caractères.")
 	}
 	return nil
 }

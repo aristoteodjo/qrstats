@@ -34,6 +34,10 @@ type Config struct {
 	// TrustProxyHeaders reads the client IP and geolocation from the platform's headers (Vercel, Cloudflare).
 	// Off when the API is reached directly, where any caller could forge them.
 	TrustProxyHeaders bool
+
+	// ClientIPHeader is the one header the edge overwrites with the caller's address (Vercel: X-Vercel-Forwarded-For,
+	// Cloudflare: CF-Connecting-IP). Any other forwarding header can be set by the caller and is ignored.
+	ClientIPHeader string
 }
 
 func (c *Config) IsDevelopment() bool {
@@ -61,6 +65,7 @@ func Load() (*Config, error) {
 		AuthAudience:       envOr("AUTH_AUDIENCE", "qrstats-api"),
 		VisitorSecret:      os.Getenv("VISITOR_SECRET"),
 		TrustProxyHeaders:  boolOr("TRUST_PROXY_HEADERS", false, &problems),
+		ClientIPHeader:     envOr("CLIENT_IP_HEADER", "X-Vercel-Forwarded-For"),
 	}
 
 	if cfg.DatabaseURL == "" {

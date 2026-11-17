@@ -15,15 +15,16 @@ import (
 )
 
 type Public struct {
-	codes  *service.QRCodes
-	scans  *service.Scans
-	webURL string
-	trust  bool
-	log    zerolog.Logger
+	codes    *service.QRCodes
+	scans    *service.Scans
+	webURL   string
+	ipHeader string
+	log      zerolog.Logger
 }
 
-func NewPublic(codes *service.QRCodes, scans *service.Scans, webURL string, trustProxy bool, log zerolog.Logger) *Public {
-	return &Public{codes: codes, scans: scans, webURL: webURL, trust: trustProxy, log: log}
+// ipHeader is empty unless the API runs behind an edge that overwrites it (TRUST_PROXY_HEADERS).
+func NewPublic(codes *service.QRCodes, scans *service.Scans, webURL, ipHeader string, log zerolog.Logger) *Public {
+	return &Public{codes: codes, scans: scans, webURL: webURL, ipHeader: ipHeader, log: log}
 }
 
 // PublicView adds the final link of a link code, so a landing page never rebuilds the UTM rules itself.
@@ -129,7 +130,7 @@ func (h *Public) Unlock(c *gin.Context) {
 		dto.Error(c, http.StatusBadRequest, "invalid", "Requête invalide.")
 		return
 	}
-	ip := service.ClientIP(c.Request.Header, c.Request.RemoteAddr, h.trust)
+	ip := service.ClientIP(c.Request.Header, c.Request.RemoteAddr, h.ipHeader)
 	view, err := h.codes.Unlock(c.Request.Context(), c.Param("slug"), in.Password, ip)
 	if err != nil {
 		fail(c, h.log, err)

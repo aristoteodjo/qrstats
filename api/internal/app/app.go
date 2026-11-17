@@ -27,7 +27,7 @@ func Build(cfg *config.Config, log zerolog.Logger) (http.Handler, error) {
 		}
 	}
 	codes := service.NewQRCodes(store.NewQRCodeStore(db), nil)
-	scans := service.NewScans(store.NewScanStore(db), cfg.VisitorSecret, cfg.TrustProxyHeaders, nil)
+	scans := service.NewScans(store.NewScanStore(db), cfg.VisitorSecret, cfg.TrustProxyHeaders, cfg.ClientIPHeader, nil)
 	return api.New(cfg, log, db, api.Deps{
 		Codes: codes, Scans: scans, Verifier: jwks.New(cfg.AuthJWKSURL, cfg.AuthIssuer, cfg.AuthAudience),
 	}), nil

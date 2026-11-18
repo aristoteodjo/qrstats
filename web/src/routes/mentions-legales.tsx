@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { LegalPage, Todo } from "@/components/site/site-layout"
+import { LegalPage } from "@/components/site/site-layout"
 
 const CONTACT = "oaristote@gmail.com"
 
@@ -12,16 +12,14 @@ export const Route = createFileRoute("/mentions-legales")({
 
             <h2>Éditeur du site</h2>
             <p>
-                qrstats est un projet personnel édité par <Todo />, personne physique. Conformément à la loi, l'adresse
-                postale de l'éditeur n'est pas publiée ; elle est communiquée à l'hébergeur et à toute autorité qui en
-                fait la demande.
+                qrstats est un projet personnel édité par Aristote ODJO, personne physique. Conformément à la loi,
+                l'adresse postale de l'éditeur n'est pas publiée ; elle est communiquée à l'hébergeur et à toute
+                autorité qui en fait la demande.
             </p>
             <p>
                 Contact : <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
             </p>
-            <p>
-                Directeur de la publication : <Todo />.
-            </p>
+            <p>Directeur de la publication : Aristote ODJO.</p>
 
             <h2>Hébergement</h2>
             <p>

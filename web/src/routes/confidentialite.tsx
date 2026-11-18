@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { LegalPage, Todo } from "@/components/site/site-layout"
+import { LegalPage } from "@/components/site/site-layout"
 
 const CONTACT = "oaristote@gmail.com"
 
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/confidentialite")({
 
             <h2>Responsable du traitement</h2>
             <p>
-                <Todo />, éditeur de qrstats. Contact : <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.
+                Aristote ODJO, éditeur de qrstats. Contact : <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.
             </p>
 
             <h2>Si vous avez un compte</h2>

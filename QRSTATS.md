@@ -119,7 +119,7 @@ Vercel, équipe `riri122s-projects`, deux projets déployés en CLI depuis leur 
 - 2026-11-18 : liste calquée sur la capture MyQRCode ; bandeau « Essai gratuit », sondage et compteur de jours d'essai non repris tant que l'offre n'est pas décidée.
 - 2026-11-18 : pas de champ téléphone international (phone-input de charlomi non copié) : l'auth est email + mot de passe.
 
-- 2026-11-18 : pages légales : éditeur particulier (adresse non publiée), contact public `oaristote@gmail.com`, hébergeur Vercel Inc., base Neon Inc., droit béninois (Code du numérique, loi 2017-20), autorité APDP. Scans conservés tant que le QR code existe (effacés avec lui). Suppression de compte sur demande par e-mail (pas encore de bouton).
+- 2026-11-18 : pages légales : éditeur Aristote ODJO, particulier (adresse non publiée), contact public `oaristote@gmail.com`, hébergeur Vercel Inc., base Neon Inc., droit béninois (Code du numérique, loi 2017-20), autorité APDP. Scans conservés tant que le QR code existe (effacés avec lui). Suppression de compte sur demande par e-mail (pas encore de bouton).
 
 ### Ouvertes (ne pas trancher à la place du porteur du projet)
 - Nom de domaine et domaine court des QR codes (le domaine court est figé dans chaque code imprimé : à choisir avant la première impression réelle).
@@ -127,7 +127,7 @@ Vercel, équipe `riri122s-projects`, deux projets déployés en CLI depuis leur 
 - Géolocalisation hors Vercel/Cloudflare (base GeoLite locale ?).
 - Inscriptions ouvertes à tous ou sur invitation ; vérification de l'e-mail ; mot de passe oublié (fournisseur d'e-mail).
 - Offres et facturation (entrée « Facturation » des captures non construite).
-- Nom de l'éditeur et directeur de la publication (mentions légales, confidentialité) ; disponibilité et tarifs (CGU) : encore `[À compléter]`.
+- Disponibilité et tarifs (CGU) : encore `[À compléter]`.
 
 ## Pièges connus
 

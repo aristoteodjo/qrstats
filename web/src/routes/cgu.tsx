@@ -27,9 +27,7 @@ export const Route = createFileRoute("/cgu")({
                 <Todo />
             </p>
             <h2>Droit applicable</h2>
-            <p>
-                <Todo />
-            </p>
+            <p>Les présentes conditions sont soumises au droit de la République du Bénin.</p>
         </LegalPage>
     ),
 })

@@ -98,7 +98,8 @@ type Bucket struct {
 // TopBuckets keeps the largest buckets and folds the rest into "other", so a chart stays readable.
 // An empty key (unknown) is kept as such for the web app to label.
 func TopBuckets(rows []Bucket, limit int) []Bucket {
-	sorted := append([]Bucket(nil), rows...)
+	// Never nil: an empty breakdown is [] in JSON, not null.
+	sorted := append([]Bucket{}, rows...)
 	sort.SliceStable(sorted, func(i, j int) bool {
 		if sorted[i].Count != sorted[j].Count {
 			return sorted[i].Count > sorted[j].Count

@@ -253,6 +253,9 @@ func TestFillSeriesAndBuckets(t *testing.T) {
 	if len(top) != 3 || top[0].Key != "b" || top[2].Key != "__other__" || top[2].Count != 3 {
 		t.Fatalf("top = %+v", top)
 	}
+	if empty := TopBuckets(nil, 3); empty == nil || len(empty) != 0 {
+		t.Fatalf("an empty breakdown must be [], got %#v", empty)
+	}
 	hours := HourSeries([]Bucket{{"0", 2}, {"23", 1}, {"9", 4}})
 	if len(hours) != 24 || hours[0] != 2 || hours[9] != 4 || hours[23] != 1 {
 		t.Fatalf("hours = %v", hours)

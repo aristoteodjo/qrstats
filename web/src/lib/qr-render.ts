@@ -4,6 +4,7 @@ import type { Design } from "@/lib/qr"
 export function stylingOptions(design: Design, data: string, logo: string | null, size = 600) {
     return {
         type: "svg" as const,
+        shape: design.shape,
         width: size,
         height: size,
         // Quiet zone around the pattern: scanners need it, especially once printed close to other ink.
@@ -117,12 +118,11 @@ export function resizeSvg(svg: string, width: number): string {
     return resized + svg.slice(tag.length)
 }
 
-/** Rasterizes an SVG document to a PNG blob at `width` pixels wide. */
-export async function svgToPng(svg: string, width: number): Promise<Blob> {
-    const sized = resizeSvg(svg, width)
+/** Draws an SVG document on a canvas at `width` pixels, optionally over a solid ground (for decoding). */
+export async function svgToCanvas(svg: string, width: number, ground?: string): Promise<HTMLCanvasElement> {
     const image = new Image()
     image.decoding = "async"
-    image.src = svgDataUrl(sized)
+    image.src = svgDataUrl(resizeSvg(svg, width))
     await image.decode()
     const ratio = image.naturalHeight / image.naturalWidth || 1
     const canvas = document.createElement("canvas")
@@ -132,10 +132,38 @@ export async function svgToPng(svg: string, width: number): Promise<Blob> {
     if (!context) throw new Error("Canvas indisponible.")
     context.imageSmoothingEnabled = true
     context.imageSmoothingQuality = "high"
+    if (ground) {
+        context.fillStyle = ground
+        context.fillRect(0, 0, canvas.width, canvas.height)
+    }
     context.drawImage(image, 0, 0, canvas.width, canvas.height)
+    return canvas
+}
+
+/** Rasterizes an SVG document to a PNG blob at `width` pixels wide, drawn at that size (never enlarged). */
+export async function svgToPng(svg: string, width: number): Promise<Blob> {
+    const canvas = await svgToCanvas(svg, width)
     return new Promise((resolve, reject) =>
         canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Export impossible."))), "image/png"),
     )
+}
+
+/**
+ * A print-ready A4 PDF: the code centred, 120 mm wide (4096 px, about 870 dpi), the name under it. jsPDF is only
+ * loaded when someone asks for a PDF.
+ */
+export async function svgToPdf(svg: string, title: string): Promise<Blob> {
+    const [{ jsPDF }, png] = await Promise.all([import("jspdf"), svgToCanvas(svg, 4096)])
+    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" })
+    const width = 120
+    const height = (png.height / png.width) * width
+    const x = (210 - width) / 2
+    const y = Math.max(30, (297 - height) / 2 - 10)
+    pdf.addImage(png.toDataURL("image/png"), "PNG", x, y, width, height, undefined, "FAST")
+    pdf.setFontSize(14)
+    pdf.text(title, 105, y + height + 12, { align: "center" })
+    pdf.setProperties({ title, creator: "qrstats" })
+    return pdf.output("blob")
 }
 
 export function downloadBlob(name: string, blob: Blob) {

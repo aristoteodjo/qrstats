@@ -84,7 +84,7 @@ func (s *QRCodeStore) Update(ctx context.Context, qr *model.QRCode) error {
 	result := s.db.WithContext(ctx).Model(&model.QRCode{}).
 		Where("id = ? AND owner_subject = ?", qr.ID, qr.OwnerSubject).
 		Updates(map[string]any{
-			"name": qr.Name, "kind": qr.Kind, "content": qr.Content, "design": qr.Design,
+			"name": qr.Name, "kind": qr.Kind, "content": qr.Content, "design": qr.Design, "rules": qr.Rules,
 			"status": qr.Status, "password_hash": qr.PasswordHash, "updated_at": qr.UpdatedAt,
 		})
 	if result.Error != nil {

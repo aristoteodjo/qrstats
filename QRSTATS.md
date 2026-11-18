@@ -59,8 +59,17 @@ Même éditeur en mode `guest` : types lien, texte, Wi-Fi, e-mail, appel (`GUEST
 ### Éditeur
 L'étape et le type sont dans l'URL (`?etape=1|2|3&type=`), le brouillon (contenu, nom, apparence, jamais de mot de passe) dans le `sessionStorage` de l'onglet (`lib/draft.ts`, clés `qrstats:draft:new|guest|edit:<id>`). Quitter la page ou recharger reprend au même endroit ; le brouillon est effacé après l'enregistrement. Un brouillon de modification ne s'applique qu'à la version du code dont il est parti (`stamp` = `updated_at`).
 
+### Redirection selon le visiteur (règles)
+Un code lien peut avoir jusqu'à 10 règles `{field, value, url}` (`field` : `os`, `device`, `country`, `language`), validées par `service.NormalizeRules` et appliquées par `PickRule` à la redirection et au déverrouillage : la première qui correspond gagne, sinon la destination principale. Les UTM s'ajoutent ensuite. Les règles ne quittent jamais le serveur (`Public.Rules` en `json:"-"`). Un changement de type vers autre chose qu'un lien les efface.
+
+### Types spécialisés
+WhatsApp, Instagram, Facebook, TikTok, YouTube, LinkedIn, Avis Google (`lib/social.ts`) : des codes lien (`kind: url`) dont le formulaire construit le lien à partir d'un identifiant ou d'un numéro, avec le logo de la marque posé automatiquement. Rien de spécifique côté API.
+
+### Lisibilité
+Chaque code est décodé dans le navigateur (jsQR, à 200 et 400 px) tel qu'il sera téléchargé, et le contraste encre/fond est mesuré (`lib/scan-check.ts`) : sous 2,5:1 il est déclaré illisible même si le décodeur le lit (une image parfaite n'est pas un papier sous une lampe), sous 4:1 fragile. Badge dans l'éditeur (étape 3) et sur la fiche.
+
 ### Apparence
-Le design est un objet JSON opaque pour l'API (≤ 400 Ko, logo inclus), dont le web possède la forme (`designSchema`, lecture tolérante). Rendu `qr-code-styling` + cadres SVG maison (`lib/qr-render.ts`) : le QR est imbriqué en `<svg>` vectoriel (jamais en `<image>`, flou une fois agrandi), marge de silence de 5 %. Export compte : PNG 1024, 2048 ou 4096 px (dessiné à la taille finale) et SVG vectoriel. Logo : 14 marques (simple-icons, CC0), SVG importé gardé vectoriel, ou image ramenée à 1024 px en WebP (design de 1,5 Mo au plus côté API). Correction d'erreur H avec logo, Q sinon.
+Le design est un objet JSON opaque pour l'API (≤ 400 Ko, logo inclus), dont le web possède la forme (`designSchema`, lecture tolérante). Rendu `qr-code-styling` + cadres SVG maison (`lib/qr-render.ts`) : le QR est imbriqué en `<svg>` vectoriel (jamais en `<image>`, flou une fois agrandi), marge de silence de 5 %. Export compte : PNG 1024, 2048 ou 4096 px (dessiné à la taille finale), SVG vectoriel et PDF A4 (jsPDF chargé à la demande). Forme carrée ou ronde ; 12 styles prêts à l'emploi (`lib/style-presets.ts`, tous à fort contraste). Logo : 14 marques (simple-icons, CC0), SVG importé gardé vectoriel, ou image ramenée à 1024 px en WebP (design de 1,5 Mo au plus côté API). Correction d'erreur H avec logo, Q sinon.
 
 ## Identité visuelle
 
@@ -112,7 +121,7 @@ Vercel, équipe `riri122s-projects`, deux projets déployés en CLI depuis leur 
 3. Suivi des scans et analyses (globales et par code). **Fait (2026-11-18).**
 3b. Liste des QR codes en cartes (miniature, lien court, destination, scans, dates, statut, partage, téléchargement), filtres statut/type, tri, actions groupées, renommage. **Fait (2026-11-18).**
 4. Refonte visuelle (auth, accueil, 404/500, barre latérale) vérifiée dans Chrome headless local (`playwright-core`, parcours inscription → création → liste → analyses). **Fait (2026-11-18).**
-5. Export CSV des scans, comparaison de codes, filtres par pays/appareil dans les analyses.
+5. Inspiré de qrcode-ai.com (2026-11-18) : vérification de lisibilité, styles prêts à l'emploi, forme ronde, types réseaux sociaux, export PDF, redirection selon le visiteur. **Fait.** Restent : QR art par IA (fournisseur à choisir), QR sur image de fond, génération en lot (CSV), domaine personnalisé, équipes, export CSV des scans.
 6. Facturation et limites par offre (si décidé).
 
 ## Décisions

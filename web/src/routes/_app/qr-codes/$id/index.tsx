@@ -9,6 +9,7 @@ import { StatusPill } from "@/components/dash/status-pill"
 import { DownloadButtons } from "@/components/qr/download-buttons"
 import { DeleteQrModal, useToggleStatus } from "@/components/qr/qr-actions"
 import { QrImage } from "@/components/qr/qr-image"
+import { ScanCheck } from "@/components/qr/scan-check"
 import { StatsBoard } from "@/components/stats/stats-board"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -121,6 +122,7 @@ function QrDetail() {
                             data={qrPayload(code.kind, code.content, link)}
                             name={code.name}
                         />
+                        <ScanCheck design={design} data={qrPayload(code.kind, code.content, link)} />
                     </section>
                     <section
                         aria-label="Destination"

@@ -180,7 +180,10 @@ export const FRAME_STYLES = ["none", "label", "box", "badge", "speech"] as const
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/)
 
+export const SHAPES = ["square", "circle"] as const
+
 export const designSchema = z.object({
+    shape: z.enum(SHAPES).catch("square"),
     dots: z
         .object({ style: z.enum(DOT_STYLES).catch("square"), color: hex.catch("#000000") })
         .catch({ style: "square", color: "#000000" }),
@@ -273,6 +276,7 @@ export const qrCodeSchema = z.object({
     content: z.unknown(),
     design: z.unknown(),
     status: z.enum(["active", "paused"]),
+    rules: z.array(z.object({ field: z.string(), value: z.string(), url: z.string() })).catch([]),
     protected: z.boolean(),
     created_at: z.string(),
     updated_at: z.string(),

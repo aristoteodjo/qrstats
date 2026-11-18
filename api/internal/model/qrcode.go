@@ -20,6 +20,7 @@ type QRCode struct {
 	Kind         string          `gorm:"size:16;not null" json:"kind"`
 	Content      json.RawMessage `gorm:"type:jsonb;not null" json:"content" swaggertype:"object"`
 	Design       json.RawMessage `gorm:"type:jsonb;not null" json:"design" swaggertype:"object"`
+	Rules        json.RawMessage `gorm:"type:jsonb;not null;default:'[]'" json:"rules" swaggertype:"array,object"`
 	Status       string          `gorm:"size:16;not null;default:active" json:"status"`
 	PasswordHash string          `gorm:"size:100;not null;default:''" json:"-"`
 	// Failed unlocks in the current window, shared by every API instance: the per-code cap on password guessing.

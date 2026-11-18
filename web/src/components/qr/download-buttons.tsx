@@ -12,11 +12,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { downloadBlob, fileName, svgToPng } from "@/lib/qr-render"
+import { downloadBlob, fileName, svgToPdf, svgToPng } from "@/lib/qr-render"
 import type { Design } from "@/lib/qr"
 
 type Source = { design: Design; data: string; name: string }
-export type Export = { format: "png"; size: number } | { format: "svg" }
+export type Export = { format: "png"; size: number } | { format: "svg" } | { format: "pdf" }
 
 /** Account exports: PNG up to 4096 px for print, SVG for designers (vector, infinitely sharp). */
 export const PNG_SIZES = [
@@ -34,6 +34,8 @@ export function useQrDownload({ design, data, name }: Source) {
             const svg = await renderQrSvg(design, data)
             if (target.format === "svg") {
                 downloadBlob(fileName(name, "svg"), new Blob([svg], { type: "image/svg+xml" }))
+            } else if (target.format === "pdf") {
+                downloadBlob(fileName(name, "pdf"), await svgToPdf(svg, name))
             } else {
                 downloadBlob(fileName(`${name}-${target.size}`, "png"), await svgToPng(svg, target.size))
             }
@@ -60,6 +62,12 @@ export function ExportMenuItems({ onExport }: { onExport: (target: Export) => vo
                 <span className="grid">
                     <span>SVG vectoriel</span>
                     <span className="text-muted-foreground text-xs">imprimeur, graphiste, toute taille</span>
+                </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onExport({ format: "pdf" })}>
+                <span className="grid">
+                    <span>PDF A4</span>
+                    <span className="text-muted-foreground text-xs">prêt à imprimer, avec le nom du code</span>
                 </span>
             </DropdownMenuItem>
         </>

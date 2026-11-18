@@ -58,6 +58,10 @@ definitions:
         type: string
       protected:
         type: boolean
+      rules:
+        items:
+          type: object
+        type: array
       slug:
         type: string
       status:
@@ -83,6 +87,10 @@ definitions:
         type: string
       protected:
         type: boolean
+      rules:
+        items:
+          type: object
+        type: array
       scans:
         type: integer
       slug:
@@ -116,6 +124,10 @@ definitions:
         type: string
       password:
         type: string
+      rules:
+        items:
+          type: object
+        type: array
     type: object
   service.DayCount:
     properties:
@@ -140,6 +152,12 @@ definitions:
         description: 'Password: absent keeps it, "" removes it, anything else replaces
           it.'
         type: string
+      rules:
+        description: 'Rules: absent keeps them; [] removes them. A kind change away
+          from link always drops them.'
+        items:
+          type: object
+        type: array
       status:
         type: string
     type: object

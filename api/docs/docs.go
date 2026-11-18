@@ -474,6 +474,12 @@ const docTemplate = `{
                 "protected": {
                     "type": "boolean"
                 },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                },
                 "slug": {
                     "type": "string"
                 },
@@ -511,6 +517,12 @@ const docTemplate = `{
                 },
                 "protected": {
                     "type": "boolean"
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
                 },
                 "scans": {
                     "type": "integer"
@@ -562,6 +574,12 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string"
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
                 }
             }
         },
@@ -597,6 +615,13 @@ const docTemplate = `{
                 "password": {
                     "description": "Password: absent keeps it, \"\" removes it, anything else replaces it.",
                     "type": "string"
+                },
+                "rules": {
+                    "description": "Rules: absent keeps them; [] removes them. A kind change away from link always drops them.",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
                 },
                 "status": {
                     "type": "string"

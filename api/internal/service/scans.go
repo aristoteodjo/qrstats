@@ -69,6 +69,14 @@ type ScanRequest struct {
 	Query      url.Values
 }
 
+// Describe reads what a request says about the scanner: device, system, browser, language, and the country the
+// platform resolved. Used both to count the scan and to pick a routing rule.
+func (s *Scans) Describe(req ScanRequest) (Client, string) {
+	client := ParseClient(req.Header.Get("User-Agent"), req.Header.Get("Accept-Language"), req.Header.Get("Referer"))
+	country, _ := Location(req.Header, s.trust)
+	return client, country
+}
+
 // BuildScan turns a request into a scan, or nil for a bot. The campaign is the one the redirect resolved.
 func (s *Scans) BuildScan(qr *model.QRCode, req ScanRequest, campaign Campaign) *model.Scan {
 	userAgent := req.Header.Get("User-Agent")

@@ -1,11 +1,22 @@
 import { useMutation } from "@tanstack/react-query"
-import { ArrowLeftRightIcon, BanIcon, FrameIcon, Grid3x3Icon, ImagePlusIcon, ScanIcon, Trash2Icon } from "lucide-react"
+import {
+    SparklesIcon,
+    ArrowLeftRightIcon,
+    BanIcon,
+    FrameIcon,
+    Grid3x3Icon,
+    ImagePlusIcon,
+    ScanIcon,
+    Trash2Icon,
+} from "lucide-react"
 import { useId } from "react"
 import type { ReactNode } from "react"
 
 import { ChoiceGrid } from "@/components/qr/choice-grid"
 import { ColorField } from "@/components/qr/color-field"
 import { EditorSection } from "@/components/qr/editor-section"
+import { QrImage } from "@/components/qr/qr-image"
+import { STYLE_PRESETS, applyPreset } from "@/lib/style-presets"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -120,13 +131,45 @@ function FrameSample({ style }: { style: Design["frame"]["style"] }) {
 }
 
 /** `limited` (no account): pattern, colours and corners only; frames and logos come with an account. */
+function PresetGallery({ design, onChange, limited }: Props & { limited: boolean }) {
+    return (
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            {STYLE_PRESETS.filter((preset) => !limited || preset.design.frame.style === "none").map((preset) => (
+                <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => onChange(applyPreset(design, preset, !limited))}
+                    className="bg-card hover:border-primary/60 grid gap-2 rounded-xl border-2 p-2 text-xs font-medium transition-colors"
+                >
+                    <QrImage
+                        design={{ ...preset.design, logo: design.logo }}
+                        data="https://qrstats.app"
+                        label=""
+                        className="w-full"
+                    />
+                    {preset.name}
+                </button>
+            ))}
+        </div>
+    )
+}
+
 export function DesignSections({ design, onChange, limited = false }: Props & { limited?: boolean }) {
-    const set = <TKey extends keyof Design>(key: TKey, value: Partial<Design[TKey]>) =>
+    // Every design key but `shape` holds an object of settings; `shape` is set directly.
+    const set = <TKey extends Exclude<keyof Design, "shape">>(key: TKey, value: Partial<Design[TKey]>) =>
         onChange({ ...design, [key]: { ...design[key], ...value } })
     const frameTextId = useId()
 
     return (
         <>
+            <EditorSection
+                value="presets"
+                icon={SparklesIcon}
+                title="Styles prêts à l'emploi"
+                description="Un clic, puis ajustez si besoin"
+            >
+                <PresetGallery design={design} onChange={onChange} limited={limited} />
+            </EditorSection>
             {limited ? null : (
                 <EditorSection
                     value="frame"
@@ -174,6 +217,24 @@ export function DesignSections({ design, onChange, limited = false }: Props & { 
                 title="Motif du QR code"
                 description="Forme des points et couleurs"
             >
+                <ChoiceGrid
+                    label="Forme du code"
+                    value={design.shape}
+                    size="sm"
+                    onChange={(shape) => onChange({ ...design, shape })}
+                    options={[
+                        {
+                            value: "square",
+                            label: "Carrée",
+                            render: <span className="bg-foreground block size-7 rounded-[3px]" />,
+                        },
+                        {
+                            value: "circle",
+                            label: "Ronde",
+                            render: <span className="bg-foreground block size-7 rounded-full" />,
+                        },
+                    ]}
+                />
                 <ChoiceGrid
                     label="Style de motif"
                     value={design.dots.style}

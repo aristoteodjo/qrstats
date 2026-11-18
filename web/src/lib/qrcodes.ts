@@ -46,11 +46,21 @@ export const publicQrQuery = (slug: string) =>
         retry: false,
     })
 
-export type QRInput = { name: string; kind: Kind; content: unknown; design: Design; password?: string }
+export type RuleInput = { field: string; value: string; url: string }
+
+export type QRInput = {
+    name: string
+    kind: Kind
+    content: unknown
+    design: Design
+    rules?: Array<RuleInput>
+    password?: string
+}
 
 export const createQr = (input: QRInput) => request(qrCodeSchema, "/qrcodes", { method: "POST", body: input })
 
 export type QRPatch = Partial<{
+    rules: Array<RuleInput>
     name: string
     kind: Kind
     content: unknown

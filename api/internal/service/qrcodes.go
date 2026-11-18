@@ -76,6 +76,7 @@ type CreateInput struct {
 	Kind     string          `json:"kind"`
 	Content  json.RawMessage `json:"content" swaggertype:"object"`
 	Design   json.RawMessage `json:"design" swaggertype:"object"`
+	Rules    json.RawMessage `json:"rules" swaggertype:"array,object"`
 	Password string          `json:"password"`
 }
 
@@ -95,13 +96,17 @@ func (s *QRCodes) Create(ctx context.Context, owner string, in CreateInput) (*mo
 	if err != nil {
 		return nil, err
 	}
+	rules, err := NormalizeRules(in.Kind, in.Rules)
+	if err != nil {
+		return nil, err
+	}
 	hash, err := s.passwordHash(in.Kind, in.Password)
 	if err != nil {
 		return nil, err
 	}
 	now := s.now().UTC()
 	qr := &model.QRCode{
-		OwnerSubject: owner, Name: name, Kind: in.Kind, Content: content, Design: design,
+		OwnerSubject: owner, Name: name, Kind: in.Kind, Content: content, Design: design, Rules: rules,
 		Status: model.StatusActive, PasswordHash: hash, CreatedAt: now, UpdatedAt: now,
 	}
 	// A collision among 55^7 slugs is rare; a few retries make it vanishingly so.
@@ -129,7 +134,9 @@ type PatchInput struct {
 	Kind    *string         `json:"kind"`
 	Content json.RawMessage `json:"content" swaggertype:"object"`
 	Design  json.RawMessage `json:"design" swaggertype:"object"`
-	Status  *string         `json:"status"`
+	// Rules: absent keeps them; [] removes them. A kind change away from link always drops them.
+	Rules  json.RawMessage `json:"rules" swaggertype:"array,object"`
+	Status *string         `json:"status"`
 	// Password: absent keeps it, "" removes it, anything else replaces it.
 	Password *string `json:"password"`
 }
@@ -160,6 +167,16 @@ func (s *QRCodes) Update(ctx context.Context, owner, id string, in PatchInput) (
 			return nil, err
 		}
 		qr.Content = content
+	}
+	switch {
+	case len(in.Rules) > 0:
+		rules, err := NormalizeRules(kind, in.Rules)
+		if err != nil {
+			return nil, err
+		}
+		qr.Rules = rules
+	case kind != KindURL:
+		qr.Rules = json.RawMessage(`[]`)
 	}
 	qr.Kind = kind
 	if len(in.Design) > 0 {
@@ -242,6 +259,8 @@ type Public struct {
 	Status  string          `json:"status"`
 	Locked  bool            `json:"locked"`
 	Content json.RawMessage `json:"content,omitempty" swaggertype:"object"`
+	// Rules stay server side: the landing page receives the destination already chosen for this scanner.
+	Rules json.RawMessage `json:"-"`
 }
 
 // Resolve finds a code by its printed slug, for the redirect and the landing page.
@@ -254,7 +273,7 @@ func (s *QRCodes) Resolve(ctx context.Context, slug string) (*model.QRCode, erro
 
 // PublicView hides the content of a paused or locked code.
 func PublicView(qr *model.QRCode) Public {
-	view := Public{Kind: qr.Kind, Name: qr.Name, Status: qr.Status, Locked: qr.PasswordHash != ""}
+	view := Public{Kind: qr.Kind, Name: qr.Name, Status: qr.Status, Locked: qr.PasswordHash != "", Rules: qr.Rules}
 	if qr.Status == model.StatusActive && !view.Locked {
 		view.Content = qr.Content
 	}

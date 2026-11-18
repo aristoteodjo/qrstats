@@ -14,6 +14,9 @@ export type Draft = {
     protect: boolean
     design: Design
     stamp: string
+    preset: string
+    social: { value: string; message: string }
+    rules: Array<{ field: string; value: string; url: string }>
 }
 
 const draftSchema = z.object({
@@ -24,6 +27,12 @@ const draftSchema = z.object({
     protect: z.boolean().catch(false),
     design: z.unknown().optional(),
     stamp: z.string().catch(""),
+    preset: z.string().catch(""),
+    social: z.object({ value: z.string().catch(""), message: z.string().catch("") }).catch({ value: "", message: "" }),
+    rules: z
+        .array(z.object({ field: z.string().catch("os"), value: z.string().catch(""), url: z.string().catch("") }))
+        .max(10)
+        .catch([]),
 })
 
 /** Parses a stored draft; anything unreadable is treated as no draft at all. */
@@ -33,7 +42,17 @@ export function parseDraft(raw: string | null): Draft | null {
         const stored: unknown = JSON.parse(raw)
         if (typeof stored !== "object" || stored === null) return null
         // Missing keys take their empty value; only a wrong kind voids the draft.
-        const parsed = draftSchema.safeParse({ kind: "", name: "", content: {}, protect: false, stamp: "", ...stored })
+        const parsed = draftSchema.safeParse({
+            kind: "",
+            name: "",
+            content: {},
+            protect: false,
+            stamp: "",
+            preset: "",
+            social: { value: "", message: "" },
+            rules: [],
+            ...stored,
+        })
         if (!parsed.success) return null
         return { ...parsed.data, design: readDesign(parsed.data.design) }
     } catch {

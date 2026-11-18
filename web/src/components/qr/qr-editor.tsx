@@ -2,6 +2,9 @@ import { Link, useNavigate } from "@tanstack/react-router"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useStore } from "@tanstack/react-form"
 import {
+    PlusIcon,
+    SplitIcon,
+    XIcon,
     DownloadIcon,
     SparklesIcon,
     ArrowLeftIcon,
@@ -18,6 +21,10 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { DesignSections } from "@/components/qr/design-panel"
+import { ScanCheck } from "@/components/qr/scan-check"
+import { SOCIALS, SOCIAL_IDS, SOCIAL_LABELS, buildSocialUrl, isSocialId } from "@/lib/social"
+import type { SocialId } from "@/lib/social"
+import { presetLogo } from "@/lib/logos"
 import { EditorSection } from "@/components/qr/editor-section"
 import { KIND_ICONS, KindIcon } from "@/components/qr/kind-icon"
 import { PhonePreview } from "@/components/qr/phone-preview"
@@ -56,12 +63,18 @@ const STEPS: Array<{ step: Step; label: string }> = [
     { step: 3, label: "Personnalisez l'aspect" },
 ]
 
+type RuleValue = { field: string; value: string; url: string }
+
 type Values = {
     kind: Kind | ""
     name: string
     content: Contents
     protect: boolean
     password: string
+    /** A specialised link type (WhatsApp, Instagram...): stored as a link code, only the form differs. */
+    preset: SocialId | ""
+    social: { value: string; message: string }
+    rules: Array<RuleValue>
 }
 
 function allContents(existing?: QRCode, draft?: Draft | null): Contents {
@@ -109,10 +122,11 @@ export function QrEditor({ mode, existing, step: requestedStep, kindHint, onRout
             const kind = values.kind as Kind
             const content = values.content[kind]
             const password = isDynamic(kind) && values.protect ? values.password : ""
+            const rules = kind === "url" ? values.rules : []
             if (!existing) {
-                return createQr({ name: values.name, kind, content, design, password: password || undefined })
+                return createQr({ name: values.name, kind, content, design, rules, password: password || undefined })
             }
-            const patch: QRPatch = { name: values.name, kind, content, design }
+            const patch: QRPatch = { name: values.name, kind, content, design, rules }
             // Empty while already protected keeps the current password; switched off removes it.
             if (!values.protect && existing.protected) patch.password = ""
             if (values.protect && password) patch.password = password
@@ -140,6 +154,9 @@ export function QrEditor({ mode, existing, step: requestedStep, kindHint, onRout
         content: allContents(existing, draft),
         protect: !guest && (draft?.protect ?? existing?.protected ?? false),
         password: "",
+        preset: isSocialId(draft?.preset) ? draft.preset : "",
+        social: draft?.social ?? { value: "", message: "" },
+        rules: draft?.rules ?? existing?.rules ?? [],
     }
     const form = useAppForm({
         defaultValues,
@@ -175,8 +192,22 @@ export function QrEditor({ mode, existing, step: requestedStep, kindHint, onRout
             protect: values.protect,
             design,
             stamp: existing?.updated_at ?? "",
+            preset: values.preset,
+            social: values.social,
+            rules: values.rules,
         })
-    }, [key, values.kind, values.name, values.content, values.protect, design, existing?.updated_at])
+    }, [
+        key,
+        values.kind,
+        values.name,
+        values.content,
+        values.protect,
+        values.preset,
+        values.social,
+        values.rules,
+        design,
+        existing?.updated_at,
+    ])
 
     function go(next: Step, nextKind?: Kind) {
         setMode(next === 3 ? "qr" : "preview")
@@ -185,9 +216,23 @@ export function QrEditor({ mode, existing, step: requestedStep, kindHint, onRout
 
     const chooseKind = (next: Kind) => {
         form.setFieldValue("kind", next)
+        form.setFieldValue("preset", "")
         if (!isDynamic(next)) form.setFieldValue("protect", false)
         go(2, next)
     }
+
+    const chooseSocial = (id: SocialId) => {
+        form.setFieldValue("kind", "url")
+        form.setFieldValue("preset", id)
+        const logo = SOCIALS[id].logo
+        // The brand's logo goes in the middle, unless the person already chose one (never on guest codes).
+        if (logo && !guest && !design.logo.image && !design.logo.preset) {
+            setDesign({ ...design, logo: { ...design.logo, preset: logo } })
+        }
+        go(2, "url")
+    }
+
+    const typeTitle = values.preset ? SOCIALS[values.preset].title : KIND_LABELS[kind ?? "url"].title
 
     const canVisit = (target: Step) => {
         if (target === 1) return !editing || (existing ? isDynamic(existing.kind) : true)
@@ -209,17 +254,20 @@ export function QrEditor({ mode, existing, step: requestedStep, kindHint, onRout
                         {step === 1
                             ? "Choisissez le type de QR code"
                             : step === 2
-                              ? `${editing ? "Modifiez le contenu" : "Ajoutez du contenu"} : ${KIND_LABELS[kind ?? "url"].title}`
+                              ? `${editing ? "Modifiez le contenu" : "Ajoutez du contenu"} : ${typeTitle}`
                               : "Personnalisez l'aspect"}
                     </h1>
 
                     {step === 1 ? (
-                        <KindPicker
-                            current={kind}
-                            kinds={guest ? GUEST_KINDS : editing ? KINDS.filter(isDynamic) : KINDS}
-                            hints={guest ? GUEST_HINTS : undefined}
-                            onPick={chooseKind}
-                        />
+                        <>
+                            <KindPicker
+                                current={values.preset ? null : kind}
+                                kinds={guest ? GUEST_KINDS : editing ? KINDS.filter(isDynamic) : KINDS}
+                                hints={guest ? GUEST_HINTS : undefined}
+                                onPick={chooseKind}
+                            />
+                            <SocialPicker current={values.preset || null} onPick={chooseSocial} />
+                        </>
                     ) : null}
 
                     {step === 2 && kind ? (
@@ -227,7 +275,7 @@ export function QrEditor({ mode, existing, step: requestedStep, kindHint, onRout
                             <EditorSection
                                 value="content"
                                 icon={KIND_ICONS[kind]}
-                                title={KIND_LABELS[kind].title}
+                                title={typeTitle}
                                 description={
                                     guest
                                         ? "Sans compte, ce contenu est inscrit dans le code : il ne pourra plus être modifié ni suivi."
@@ -236,7 +284,11 @@ export function QrEditor({ mode, existing, step: requestedStep, kindHint, onRout
                                           : "Un code Wi-Fi est statique : le réseau est inscrit dans le motif, il n'est ni modifiable ni comptabilisé."
                                 }
                             >
-                                <ContentFields form={form} kind={kind} />
+                                {kind === "url" && values.preset ? (
+                                    <SocialFields form={form} preset={values.preset} />
+                                ) : (
+                                    <ContentFields form={form} kind={kind} />
+                                )}
                             </EditorSection>
                             {kind === "url" && !guest ? (
                                 <EditorSection
@@ -284,6 +336,16 @@ export function QrEditor({ mode, existing, step: requestedStep, kindHint, onRout
                                     </p>
                                 </EditorSection>
                             ) : null}
+                            {kind === "url" && !guest ? (
+                                <EditorSection
+                                    value="rules"
+                                    icon={SplitIcon}
+                                    title="Redirection selon le visiteur"
+                                    description="Une destination par appareil, système, pays ou langue (facultatif)"
+                                >
+                                    <RulesEditor form={form} />
+                                </EditorSection>
+                            ) : null}
                             <EditorSection
                                 value="name"
                                 icon={PencilIcon}
@@ -314,7 +376,7 @@ export function QrEditor({ mode, existing, step: requestedStep, kindHint, onRout
                     ) : null}
 
                     {step === 3 && kind ? (
-                        <Accordion type="multiple" defaultValue={[guest ? "pattern" : "frame"]} className="grid gap-4">
+                        <Accordion type="multiple" defaultValue={["presets"]} className="grid gap-4">
                             <DesignSections design={design} onChange={setDesign} limited={guest} />
                             {isDynamic(kind) && !guest ? (
                                 <EditorSection
@@ -348,6 +410,7 @@ export function QrEditor({ mode, existing, step: requestedStep, kindHint, onRout
                         onModeChange={setMode}
                         locked={values.protect}
                     />
+                    {step === 3 && payload ? <ScanCheck design={design} data={payload} className="mt-4" /> : null}
                     {existing && isDynamic(existing.kind) ? (
                         <p className="text-muted-foreground mt-4 flex items-center justify-center gap-1.5 text-center text-xs">
                             <LinkIcon className="size-3.5" aria-hidden="true" />
@@ -737,5 +800,227 @@ function GuestUpsell() {
                 Créer un compte
             </Link>
         </div>
+    )
+}
+
+/** Specialised link types, below the base ones: the brand mark makes them easy to spot. */
+function SocialPicker({ current, onPick }: { current: SocialId | null; onPick: (id: SocialId) => void }) {
+    return (
+        <section aria-labelledby="types-reseaux" className="grid gap-3">
+            <h2 id="types-reseaux" className="font-heading text-lg font-semibold">
+                Réseaux et messageries
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {SOCIAL_IDS.map((id) => {
+                    const social = SOCIALS[id]
+                    const logo = social.logo ? presetLogo(social.logo) : null
+                    return (
+                        <button
+                            key={id}
+                            type="button"
+                            onClick={() => onPick(id)}
+                            aria-pressed={current === id}
+                            className={cn(
+                                "bg-card hover:border-primary/60 flex min-h-16 items-center gap-3 rounded-xl border-2 p-3 text-left shadow-xs transition-colors",
+                                current === id ? "border-primary" : "border-transparent",
+                            )}
+                        >
+                            {logo ? (
+                                <img src={logo} alt="" className="size-10 shrink-0" />
+                            ) : (
+                                <span className="bg-accent text-accent-foreground font-heading grid size-10 shrink-0 place-items-center rounded-full text-sm font-bold">
+                                    {social.title.slice(0, 2)}
+                                </span>
+                            )}
+                            <span className="grid gap-0.5">
+                                <span className="font-semibold">{social.title}</span>
+                                <span className="text-muted-foreground text-xs">{social.hint}</span>
+                            </span>
+                        </button>
+                    )
+                })}
+            </div>
+        </section>
+    )
+}
+
+/** The handle or number a specialised type needs; the link itself is built as the person types. */
+function SocialFields({ form, preset }: { form: EditorForm; preset: SocialId }) {
+    const labels = SOCIAL_LABELS[preset]
+    const sync = () => {
+        const social = form.getFieldValue("social")
+        form.setFieldValue("content.url.url", buildSocialUrl(preset, social))
+    }
+    return (
+        <div className="grid gap-4">
+            <form.AppField
+                name="social.value"
+                validators={{
+                    onSubmit: ({ value }) =>
+                        form.getFieldValue("preset") !== preset
+                            ? undefined
+                            : !value.trim()
+                              ? "Ce champ est obligatoire."
+                              : urlProblem(buildSocialUrl(preset, form.getFieldValue("social"))),
+                }}
+                listeners={{ onChange: sync }}
+            >
+                {(field) => (
+                    <field.TextField
+                        label={`${labels.label} *`}
+                        placeholder={labels.placeholder}
+                        description={labels.description}
+                        type={preset === "whatsapp" ? "tel" : "text"}
+                        className="h-11"
+                    />
+                )}
+            </form.AppField>
+            {preset === "whatsapp" ? (
+                <form.AppField name="social.message" listeners={{ onChange: sync }}>
+                    {(field) => <field.TextareaField label="Message prérempli (facultatif)" rows={3} maxLength={500} />}
+                </form.AppField>
+            ) : null}
+            <form.Subscribe selector={(state) => state.values.content.url.url}>
+                {(url) =>
+                    url ? (
+                        <p className="text-muted-foreground text-sm break-all">
+                            Lien créé : <span className="text-foreground font-medium">{url}</span>
+                        </p>
+                    ) : null
+                }
+            </form.Subscribe>
+        </div>
+    )
+}
+
+const RULE_FIELDS = [
+    { value: "os", label: "Système" },
+    { value: "device", label: "Appareil" },
+    { value: "country", label: "Pays (code)" },
+    { value: "language", label: "Langue (code)" },
+] as const
+
+const RULE_CHOICES: Record<string, Array<{ value: string; label: string }>> = {
+    os: ["iOS", "Android", "Windows", "macOS", "Linux", "ChromeOS"].map((v) => ({ value: v, label: v })),
+    device: [
+        { value: "mobile", label: "Mobile" },
+        { value: "tablet", label: "Tablette" },
+        { value: "desktop", label: "Ordinateur" },
+    ],
+}
+
+/** First matching rule wins; no match keeps the main destination. Checked again by the API. */
+function RulesEditor({ form }: { form: EditorForm }) {
+    return (
+        <form.Field
+            name="rules"
+            validators={{
+                onSubmit: ({ value }) => {
+                    for (const [index, rule] of value.entries()) {
+                        if (!rule.value.trim()) return `Règle ${index + 1} : choisissez une valeur.`
+                        const problem = urlProblem(rule.url)
+                        if (problem) return `Règle ${index + 1} : ${problem}`
+                    }
+                    return undefined
+                },
+            }}
+        >
+            {(field) => {
+                const rules = field.state.value
+                const update = (index: number, patch: Partial<RuleValue>) =>
+                    field.handleChange(rules.map((rule, i) => (i === index ? { ...rule, ...patch } : rule)))
+                const errors = field.state.meta.errors.filter(Boolean)
+                return (
+                    <div className="grid gap-4">
+                        <p className="text-muted-foreground text-sm">
+                            Exemple : les iPhone vers l'App Store, les Android vers le Play Store, les autres vers votre
+                            site. La première règle qui correspond s'applique.
+                        </p>
+                        {rules.map((rule, index) => (
+                            <fieldset
+                                key={index}
+                                className="bg-muted/50 grid gap-3 rounded-xl p-4 sm:grid-cols-[10rem_10rem_minmax(0,1fr)_auto] sm:items-end"
+                            >
+                                <legend className="sr-only">Règle {index + 1}</legend>
+                                <label className="grid gap-1.5 text-sm font-medium">
+                                    Critère
+                                    <select
+                                        className="bg-card h-11 rounded-md border px-3 text-sm"
+                                        value={rule.field}
+                                        onChange={(event) => update(index, { field: event.target.value, value: "" })}
+                                    >
+                                        {RULE_FIELDS.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <label className="grid gap-1.5 text-sm font-medium">
+                                    Valeur
+                                    {Object.hasOwn(RULE_CHOICES, rule.field) ? (
+                                        <select
+                                            className="bg-card h-11 rounded-md border px-3 text-sm"
+                                            value={rule.value}
+                                            onChange={(event) => update(index, { value: event.target.value })}
+                                        >
+                                            <option value="">Choisir…</option>
+                                            {RULE_CHOICES[rule.field].map((option) => (
+                                                <option key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            className="bg-card h-11 rounded-md border px-3 text-sm uppercase"
+                                            maxLength={rule.field === "language" ? 3 : 2}
+                                            placeholder={rule.field === "country" ? "BJ" : "fr"}
+                                            value={rule.value}
+                                            onChange={(event) => update(index, { value: event.target.value })}
+                                        />
+                                    )}
+                                </label>
+                                <label className="grid gap-1.5 text-sm font-medium">
+                                    Destination
+                                    <input
+                                        className="bg-card h-11 rounded-md border px-3 text-sm"
+                                        inputMode="url"
+                                        placeholder="apps.apple.com/…"
+                                        value={rule.url}
+                                        onChange={(event) => update(index, { url: event.target.value })}
+                                    />
+                                </label>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-11"
+                                    aria-label={`Supprimer la règle ${index + 1}`}
+                                    onClick={() => field.handleChange(rules.filter((_, i) => i !== index))}
+                                >
+                                    <XIcon />
+                                </Button>
+                            </fieldset>
+                        ))}
+                        {errors.length > 0 ? (
+                            <p role="alert" className="text-destructive text-sm">
+                                {String(errors[0])}
+                            </p>
+                        ) : null}
+                        {rules.length < 10 ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="min-h-11 justify-self-start"
+                                onClick={() => field.handleChange([...rules, { field: "os", value: "", url: "" }])}
+                            >
+                                <PlusIcon aria-hidden /> Ajouter une règle
+                            </Button>
+                        ) : null}
+                    </div>
+                )
+            }}
+        </form.Field>
     )
 }

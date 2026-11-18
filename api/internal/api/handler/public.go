@@ -33,14 +33,23 @@ type PublicView struct {
 	Target string `json:"target,omitempty"`
 }
 
-func withTarget(view service.Public) PublicView {
+// withTarget resolves the final link for this scanner (routing rules, then UTM parameters).
+func (h *Public) withTarget(view service.Public, req service.ScanRequest) PublicView {
 	out := PublicView{Public: view}
 	if view.Content != nil {
 		if link, ok := service.LinkTarget(view.Kind, view.Content); ok {
+			client, country := h.scans.Describe(req)
+			if routed, ok := service.PickRule(view.Rules, client, country); ok {
+				link.URL = routed
+			}
 			out.Target, _ = service.ResolveTarget(link, service.Campaign{})
 		}
 	}
 	return out
+}
+
+func scanRequest(c *gin.Context) service.ScanRequest {
+	return service.ScanRequest{Header: c.Request.Header, RemoteAddr: c.Request.RemoteAddr, Query: c.Request.URL.Query()}
 }
 
 // Redirect godoc
@@ -71,17 +80,20 @@ func (h *Public) Redirect(c *gin.Context) {
 		return
 	}
 
+	req := scanRequest(c)
 	campaign := service.ScanCampaign(c.Request.URL.Query())
 	target := landing
 	if qr.PasswordHash == "" {
 		if link, ok := service.LinkTarget(qr.Kind, qr.Content); ok {
+			client, country := h.scans.Describe(req)
+			if routed, ok := service.PickRule(qr.Rules, client, country); ok {
+				link.URL = routed
+			}
 			target, campaign = service.ResolveTarget(link, campaign)
 		}
 	}
 
-	scan := h.scans.BuildScan(qr, service.ScanRequest{
-		Header: c.Request.Header, RemoteAddr: c.Request.RemoteAddr, Query: c.Request.URL.Query(),
-	}, campaign)
+	scan := h.scans.BuildScan(qr, req, campaign)
 	// Recorded before answering: a serverless instance may freeze as soon as the response is sent. A failed write
 	// costs one count, never the visitor's redirect.
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
@@ -107,7 +119,7 @@ func (h *Public) Show(c *gin.Context) {
 		return
 	}
 	c.Header("Cache-Control", "no-store")
-	c.JSON(http.StatusOK, withTarget(service.PublicView(qr)))
+	c.JSON(http.StatusOK, h.withTarget(service.PublicView(qr), scanRequest(c)))
 }
 
 type unlockInput struct {
@@ -137,5 +149,5 @@ func (h *Public) Unlock(c *gin.Context) {
 		return
 	}
 	c.Header("Cache-Control", "no-store")
-	c.JSON(http.StatusOK, withTarget(view))
+	c.JSON(http.StatusOK, h.withTarget(view, scanRequest(c)))
 }

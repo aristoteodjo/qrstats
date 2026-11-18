@@ -1,6 +1,7 @@
 import { createFormHook, createFormHookContexts } from "@tanstack/react-form"
 import type { ComponentProps, ReactNode } from "react"
-import { Loader2Icon } from "lucide-react"
+import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react"
+import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -8,13 +9,7 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
 export const { fieldContext, formContext, useFieldContext, useFormContext } = createFormHookContexts()
@@ -86,6 +81,48 @@ function SelectField({ label, description, placeholder, options, empty }: Select
                 </SelectContent>
             </Select>
             {options.length === 0 && empty ? <FieldDescription>{empty}</FieldDescription> : null}
+            {description ? <FieldDescription>{description}</FieldDescription> : null}
+            <FieldError errors={errors} />
+        </Field>
+    )
+}
+
+type PasswordFieldProps = { label: string; description?: ReactNode; autoComplete: "current-password" | "new-password" }
+
+/** A password with a show/hide toggle: typing blind on a phone is where most sign-in errors come from. */
+function PasswordField({ label, description, autoComplete }: PasswordFieldProps) {
+    const field = useFieldContext<string>()
+    const [visible, setVisible] = useState(false)
+    const errors = field.state.meta.isTouched ? asMessages(field.state.meta.errors as Array<ErrorLike>) : []
+    return (
+        <Field data-invalid={errors.length > 0 || undefined}>
+            <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+            <div className="relative">
+                <Input
+                    id={field.name}
+                    name={field.name}
+                    type={visible ? "text" : "password"}
+                    autoComplete={autoComplete}
+                    value={field.state.value}
+                    onChange={(event) => field.handleChange(event.target.value)}
+                    onBlur={field.handleBlur}
+                    aria-invalid={errors.length > 0 || undefined}
+                    className="bg-card h-12 pr-12"
+                />
+                <button
+                    type="button"
+                    onClick={() => setVisible((value) => !value)}
+                    aria-label={visible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                    aria-pressed={visible}
+                    className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 grid w-12 place-items-center rounded-r-md"
+                >
+                    {visible ? (
+                        <EyeOffIcon className="size-4" aria-hidden />
+                    ) : (
+                        <EyeIcon className="size-4" aria-hidden />
+                    )}
+                </button>
+            </div>
             {description ? <FieldDescription>{description}</FieldDescription> : null}
             <FieldError errors={errors} />
         </Field>
@@ -223,6 +260,7 @@ export const { useAppForm, withForm } = createFormHook({
     formContext,
     fieldComponents: {
         TextField,
+        PasswordField,
         SelectField,
         TextareaField,
         CheckboxField,

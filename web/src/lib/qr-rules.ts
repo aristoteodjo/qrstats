@@ -10,7 +10,8 @@ export function urlProblem(value: string): string | undefined {
     const candidate = raw.includes("://") ? raw : `https://${raw}`
     try {
         const url = new URL(candidate)
-        if (url.protocol !== "http:" && url.protocol !== "https:") return "Seules les adresses http et https sont acceptées."
+        if (url.protocol !== "http:" && url.protocol !== "https:")
+            return "Seules les adresses http et https sont acceptées."
         if (!url.hostname.includes(".") && url.hostname !== "localhost") return "Adresse invalide."
     } catch {
         return "Adresse invalide."
@@ -19,10 +20,22 @@ export function urlProblem(value: string): string | undefined {
 }
 
 export const emailProblem = (value: string, required = true) =>
-    !value.trim() ? (required ? "L'adresse e-mail est obligatoire." : undefined) : EMAIL.test(value.trim()) ? undefined : "Adresse e-mail invalide."
+    !value.trim()
+        ? required
+            ? "L'adresse e-mail est obligatoire."
+            : undefined
+        : EMAIL.test(value.trim())
+          ? undefined
+          : "Adresse e-mail invalide."
 
 export const phoneProblem = (value: string, required = true) =>
-    !value.trim() ? (required ? "Le numéro est obligatoire." : undefined) : PHONE.test(value.trim()) ? undefined : "Numéro de téléphone invalide."
+    !value.trim()
+        ? required
+            ? "Le numéro est obligatoire."
+            : undefined
+        : PHONE.test(value.trim())
+          ? undefined
+          : "Numéro de téléphone invalide."
 
 export const requiredProblem = (value: string, message: string) => (value.trim() ? undefined : message)
 

@@ -62,8 +62,7 @@ export type QRPatch = Partial<{
 export const updateQr = (id: string, patch: QRPatch) =>
     request(qrCodeSchema, `/qrcodes/${encodeURIComponent(id)}`, { method: "PATCH", body: patch })
 
-export const deleteQr = (id: string) =>
-    request(z.null(), `/qrcodes/${encodeURIComponent(id)}`, { method: "DELETE" })
+export const deleteQr = (id: string) => request(z.null(), `/qrcodes/${encodeURIComponent(id)}`, { method: "DELETE" })
 
 export const unlockQr = (slug: string, password: string) =>
     request(publicViewSchema, `/public/qr/${encodeURIComponent(slug)}/unlock`, {

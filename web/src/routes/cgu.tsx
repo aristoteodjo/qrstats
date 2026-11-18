@@ -8,8 +8,8 @@ export const Route = createFileRoute("/cgu")({
         <LegalPage title="Conditions générales d'utilisation">
             <h2>Objet</h2>
             <p>
-                qrstats permet de créer des QR codes dont la destination reste modifiable et de consulter les statistiques de
-                leurs scans.
+                qrstats permet de créer des QR codes dont la destination reste modifiable et de consulter les
+                statistiques de leurs scans.
             </p>
             <h2>Compte</h2>
             <p>Vous êtes responsable de la confidentialité de votre mot de passe et des contenus liés à vos codes.</p>

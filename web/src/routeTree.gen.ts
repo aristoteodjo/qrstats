@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as CguRouteImport } from './routes/cgu'
 import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
 import { Route as ConnexionRouteImport } from './routes/connexion'
+import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as AppAideRouteImport } from './routes/_app/aide'
 import { Route as AppAnalysesRouteImport } from './routes/_app/analyses'
@@ -48,6 +49,11 @@ const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
 const ConnexionRoute = ConnexionRouteImport.update({
   id: '/connexion',
   path: '/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InscriptionRoute = InscriptionRouteImport.update({
+  id: '/inscription',
+  path: '/inscription',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/cgu': typeof CguRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/connexion': typeof ConnexionRoute
+  '/inscription': typeof InscriptionRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/aide': typeof AppAideRoute
   '/analyses': typeof AppAnalysesRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/cgu': typeof CguRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/connexion': typeof ConnexionRoute
+  '/inscription': typeof InscriptionRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/aide': typeof AppAideRoute
   '/analyses': typeof AppAnalysesRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/cgu': typeof CguRoute
   '/confidentialite': typeof ConfidentialiteRoute
   '/connexion': typeof ConnexionRoute
+  '/inscription': typeof InscriptionRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/_app/aide': typeof AppAideRoute
   '/_app/analyses': typeof AppAnalysesRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/cgu'
     | '/confidentialite'
     | '/connexion'
+    | '/inscription'
     | '/mentions-legales'
     | '/aide'
     | '/analyses'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/cgu'
     | '/confidentialite'
     | '/connexion'
+    | '/inscription'
     | '/mentions-legales'
     | '/aide'
     | '/analyses'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/cgu'
     | '/confidentialite'
     | '/connexion'
+    | '/inscription'
     | '/mentions-legales'
     | '/_app/aide'
     | '/_app/analyses'
@@ -221,6 +233,7 @@ export interface RootRouteChildren {
   CguRoute: typeof CguRoute
   ConfidentialiteRoute: typeof ConfidentialiteRoute
   ConnexionRoute: typeof ConnexionRoute
+  InscriptionRoute: typeof InscriptionRoute
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   QSlugRoute: typeof QSlugRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -262,6 +275,13 @@ declare module '@tanstack/react-router' {
       path: '/connexion'
       fullPath: '/connexion'
       preLoaderRoute: typeof ConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inscription': {
+      id: '/inscription'
+      path: '/inscription'
+      fullPath: '/inscription'
+      preLoaderRoute: typeof InscriptionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mentions-legales': {
@@ -372,6 +392,7 @@ const rootRouteChildren: RootRouteChildren = {
   CguRoute: CguRoute,
   ConfidentialiteRoute: ConfidentialiteRoute,
   ConnexionRoute: ConnexionRoute,
+  InscriptionRoute: InscriptionRoute,
   MentionsLegalesRoute: MentionsLegalesRoute,
   QSlugRoute: QSlugRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

@@ -1,24 +1,18 @@
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext, notFound, useRouter } from "@tanstack/react-router"
+import { HeadContent, Outlet, Scripts, createRootRouteWithContext, useRouter } from "@tanstack/react-router"
 import type { ErrorComponentProps } from "@tanstack/react-router"
 import type { QueryClient } from "@tanstack/react-query"
 import { useEffect } from "react"
 import type { ReactNode } from "react"
 
 import appCss from "@/styles.css?url"
+import { StatusPage } from "@/components/shared/status-page"
 import { Button } from "@/components/ui/button"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { currentSpace } from "@/lib/current-space"
-import type { Space } from "@/lib/spaces"
 
-type RouterContext = { queryClient: QueryClient; space: Space | null }
+type RouterContext = { queryClient: QueryClient }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-    beforeLoad: () => {
-        const space = currentSpace()
-        if (!space) throw notFound()
-        return { space }
-    },
     head: () => ({
         meta: [
             { charSet: "utf-8" },
@@ -26,7 +20,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
             { title: "qrstats, des QR codes modifiables et mesurés" },
             {
                 name: "description",
-                content: "Créez des QR codes dont vous changez la destination après impression, et mesurez chaque scan.",
+                content:
+                    "Créez des QR codes dont vous changez la destination après impression, et mesurez chaque scan.",
             },
         ],
         links: [
@@ -67,21 +62,24 @@ function RootError({ error }: ErrorComponentProps) {
         console.error(error)
     }, [error])
     return (
-        <main id="contenu" className="grid min-h-svh place-items-center p-6">
-            <div className="grid max-w-sm gap-4 text-center">
-                <h1 className="font-heading text-2xl font-semibold">Un problème est survenu</h1>
-                <p className="text-muted-foreground text-sm">
-                    La page n'a pas pu s'afficher. Réessayez ; si le problème continue, revenez dans quelques minutes.
-                </p>
-                <div className="flex justify-center gap-2">
-                    <Button className="min-h-11" onClick={() => void router.invalidate()}>
-                        Réessayer
-                    </Button>
-                    <Button variant="outline" className="min-h-11" asChild>
-                        <a href="/">Accueil</a>
-                    </Button>
-                </div>
-            </div>
-        </main>
+        <>
+            <title>Un problème est survenu | qrstats</title>
+            <meta name="robots" content="noindex" />
+            <StatusPage
+                code="500"
+                title="Un problème est survenu"
+                text="La page n'a pas pu s'afficher. Vos QR codes imprimés continuent de fonctionner. Réessayez ; si le problème continue, revenez dans quelques minutes."
+                actions={
+                    <>
+                        <Button size="lg" className="h-12 px-6" onClick={() => void router.invalidate()}>
+                            Réessayer
+                        </Button>
+                        <Button asChild size="lg" variant="outline" className="h-12 px-6">
+                            <a href="/">Accueil</a>
+                        </Button>
+                    </>
+                }
+            />
+        </>
     )
 }

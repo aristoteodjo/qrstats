@@ -23,6 +23,9 @@ const NAV = [
     { title: "Compte", icon: UserIcon, to: "/compte" },
 ] as const
 
+const NAV_ITEM =
+    "h-11 rounded-lg text-[15px] data-[active=true]:bg-accent data-[active=true]:font-semibold data-[active=true]:text-accent-foreground"
+
 type Props = { user: { name: string; email: string }; onSignOut: () => void }
 
 export function AppSidebar({ user, onSignOut }: Props) {
@@ -48,7 +51,7 @@ export function AppSidebar({ user, onSignOut }: Props) {
                                 <SidebarMenuButton
                                     asChild
                                     tooltip="Créer un QR code"
-                                    className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground mb-3 h-11 font-medium"
+                                    className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground mb-4 h-11 rounded-lg font-semibold"
                                 >
                                     <Link to="/qr-codes/nouveau">
                                         <PlusIcon />
@@ -58,8 +61,12 @@ export function AppSidebar({ user, onSignOut }: Props) {
                             </SidebarMenuItem>
                             {NAV.map(({ title, icon: Icon, to }) => (
                                 <SidebarMenuItem key={to}>
-                                    <SidebarMenuButton asChild tooltip={title} className="h-11 text-[15px]">
-                                        <Link to={to} activeProps={{ "data-active": true }} activeOptions={{ exact: to !== "/qr-codes" }}>
+                                    <SidebarMenuButton asChild tooltip={title} className={NAV_ITEM}>
+                                        <Link
+                                            to={to}
+                                            activeProps={{ "data-active": true }}
+                                            activeOptions={{ exact: to !== "/qr-codes" }}
+                                        >
                                             <Icon />
                                             <span>{title}</span>
                                         </Link>
@@ -73,7 +80,7 @@ export function AppSidebar({ user, onSignOut }: Props) {
             <SidebarFooter>
                 <SidebarMenu className="gap-1">
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild tooltip="Aide" className="h-11 text-[15px]">
+                        <SidebarMenuButton asChild tooltip="Aide" className={NAV_ITEM}>
                             <Link to="/aide" activeProps={{ "data-active": true }}>
                                 <LifeBuoyIcon />
                                 <span>Aide</span>

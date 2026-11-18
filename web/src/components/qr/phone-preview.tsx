@@ -185,9 +185,7 @@ function ContentPreview({ kind, content, name }: { kind: Kind; content: unknown;
                         </span>
                         <p className="font-heading font-semibold">{full}</p>
                         {c.title || c.organization ? (
-                            <p className="text-xs opacity-90">
-                                {[c.title, c.organization].filter(Boolean).join(" · ")}
-                            </p>
+                            <p className="text-xs opacity-90">{[c.title, c.organization].filter(Boolean).join(", ")}</p>
                         ) : null}
                     </div>
                     <ul className="grid gap-2 p-3 text-xs">

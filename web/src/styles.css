@@ -7,18 +7,18 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * qrstats: a cool workshop. Cobalt for actions (from the reference captures), a blue-grey canvas, white cards.
- * Bricolage carries titles and big figures, Inter Tight the interface, JetBrains Mono the slugs and labels.
+ * qrstats: the QR code's own grammar (finder squares, modules) is the one motif. Ultramarine for actions on cool
+ * white; Bricolage carries titles and figures, Inter Tight the interface, JetBrains Mono only the printed slugs.
  */
 :root {
-    --radius: 0.75rem;
-    --cobalt: #3460e6;
-    --cobalt-deep: #2147b8;
-    --cobalt-soft: #e8eefd;
-    --canvas: #f3f5fa;
-    --ink: #10131c;
-    --ink-mute: #5b6274;
-    --line: #e1e5ee;
+    --radius: 0.875rem;
+    --ultramarine: #2d3cf0;
+    --ultramarine-deep: #1f2bc2;
+    --ultramarine-soft: #eceefe;
+    --canvas: #f6f7f9;
+    --ink: #14161f;
+    --ink-mute: #5d6273;
+    --line: #e4e6ec;
 
     --background: var(--canvas);
     --foreground: var(--ink);
@@ -26,68 +26,72 @@
     --card-foreground: var(--ink);
     --popover: #ffffff;
     --popover-foreground: var(--ink);
-    --primary: var(--cobalt);
+    --primary: var(--ultramarine);
     --primary-foreground: #ffffff;
-    --secondary: #eceff6;
+    --secondary: #eef0f4;
     --secondary-foreground: var(--ink);
-    --muted: #eceff6;
+    --muted: #eef0f4;
     --muted-foreground: var(--ink-mute);
-    --accent: var(--cobalt-soft);
-    --accent-foreground: var(--cobalt-deep);
-    --destructive: #c62f2f;
+    --accent: var(--ultramarine-soft);
+    --accent-foreground: var(--ultramarine-deep);
+    --destructive: #c42b2b;
     --border: var(--line);
-    --input: #d5dae6;
-    --ring: var(--cobalt);
-    --positive: #1d7a4a;
-    --positive-soft: #e3f3ea;
+    --input: #d6d9e2;
+    --ring: var(--ultramarine);
+    --positive: #13804c;
+    --positive-soft: #e2f4ea;
     --warning: #8a5a00;
     --warning-soft: #fbf0d9;
     --panel: var(--canvas);
+    --hero: #14161f;
+    --hero-foreground: #f6f7f9;
 
     /* Charts: reference categorical slots 1 and 2 (dataviz palette), validated light and dark. */
     --chart-1: #2a78d6;
     --chart-2: #eb6834;
-    --chart-grid: #e6e9f0;
+    --chart-grid: #e8eaef;
     --chart-surface: #ffffff;
 
     --sidebar: #ffffff;
-    --sidebar-foreground: #2b3040;
-    --sidebar-primary: var(--cobalt);
+    --sidebar-foreground: #2a2e3b;
+    --sidebar-primary: var(--ultramarine);
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: var(--cobalt-soft);
-    --sidebar-accent-foreground: var(--cobalt-deep);
+    --sidebar-accent: #f1f2f6;
+    --sidebar-accent-foreground: var(--ink);
     --sidebar-border: var(--line);
-    --sidebar-ring: var(--cobalt);
+    --sidebar-ring: var(--ultramarine);
 }
 
 .dark {
-    --cobalt: #6f93ff;
-    --cobalt-deep: #a3baff;
-    --cobalt-soft: #1c2747;
-    --canvas: #0d1017;
-    --ink: #eef1f8;
-    --ink-mute: #a2a9ba;
-    --line: #262b38;
+    --ultramarine: #7b86ff;
+    --ultramarine-deep: #aab1ff;
+    --ultramarine-soft: #1d2148;
+    --canvas: #0e1016;
+    --ink: #eef0f6;
+    --ink-mute: #a3a8b8;
+    --line: #262a36;
 
-    --card: #151923;
-    --popover: #151923;
-    --primary-foreground: #0d1017;
-    --secondary: #1d2230;
-    --muted: #1d2230;
-    --input: #303747;
+    --card: #161922;
+    --popover: #161922;
+    --primary-foreground: #0e1016;
+    --secondary: #1d212c;
+    --muted: #1d212c;
+    --input: #323747;
     --destructive: #f07070;
     --positive: #5fcf93;
     --positive-soft: #15301f;
     --warning: #f0c060;
     --warning-soft: #33280f;
+    --hero: #090a0f;
 
     --chart-1: #3987e5;
     --chart-2: #d95926;
     --chart-grid: #232838;
-    --chart-surface: #151923;
+    --chart-surface: #161922;
 
-    --sidebar: #11141c;
-    --sidebar-foreground: #d5dae6;
+    --sidebar: #12141b;
+    --sidebar-foreground: #d5d9e4;
+    --sidebar-accent: #1d212c;
 }
 
 @theme inline {
@@ -121,6 +125,8 @@
     --color-positive-soft: var(--positive-soft);
     --color-warning: var(--warning);
     --color-warning-soft: var(--warning-soft);
+    --color-hero: var(--hero);
+    --color-hero-foreground: var(--hero-foreground);
     --color-chart-1: var(--chart-1);
     --color-chart-2: var(--chart-2);
     --color-chart-grid: var(--chart-grid);
@@ -161,10 +167,8 @@
 
 @layer components {
     .label {
-        font-family: var(--font-mono);
-        font-size: 0.7rem;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
+        font-size: 0.8125rem;
+        font-weight: 500;
     }
 }
 

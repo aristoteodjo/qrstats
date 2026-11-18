@@ -10,8 +10,10 @@ describe("stylingOptions", () => {
         expect(stylingOptions(design, "x", "data:image/png;base64,AA").qrOptions.errorCorrectionLevel).toBe("H")
     })
 
-    it("leaves corner types to the library by default", () => {
+    it("draws solid corners by default and lets them follow the dots on request", () => {
         const design = defaultDesign()
+        expect(stylingOptions(design, "x", null).cornersSquareOptions).toEqual({ type: "square", color: "#000000" })
+        design.cornersSquare = { style: "default", color: "#000000" }
         expect(stylingOptions(design, "x", null).cornersSquareOptions).toEqual({ color: "#000000" })
         design.cornersDot = { style: "dot", color: "#123456" }
         expect(stylingOptions(design, "x", null).cornersDotOptions).toEqual({ type: "dot", color: "#123456" })

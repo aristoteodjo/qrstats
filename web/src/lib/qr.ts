@@ -101,7 +101,11 @@ export function wifiPayload(content: Contents["wifi"]): string {
     return `WIFI:T:${content.encryption};S:${escapeWifi(content.ssid)};${password}${content.hidden ? "H:true;" : ""};`
 }
 
-const escapeVcard = (value: string) => value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/([,;])/g, "\\$1")
+const escapeVcard = (value: string) =>
+    value
+        .replace(/\\/g, "\\\\")
+        .replace(/\n/g, "\\n")
+        .replace(/([,;])/g, "\\$1")
 
 /** A vCard 3.0, read by iOS and Android contacts. Empty fields are left out. */
 export function vcardText(c: Contents["vcard"]): string {
@@ -184,11 +188,11 @@ export const designSchema = z.object({
         .object({ color: hex.catch("#ffffff"), transparent: z.boolean().catch(false) })
         .catch({ color: "#ffffff", transparent: false }),
     cornersSquare: z
-        .object({ style: z.enum(CORNER_SQUARE_STYLES).catch("default"), color: hex.catch("#000000") })
-        .catch({ style: "default", color: "#000000" }),
+        .object({ style: z.enum(CORNER_SQUARE_STYLES).catch("square"), color: hex.catch("#000000") })
+        .catch({ style: "square", color: "#000000" }),
     cornersDot: z
-        .object({ style: z.enum(CORNER_DOT_STYLES).catch("default"), color: hex.catch("#000000") })
-        .catch({ style: "default", color: "#000000" }),
+        .object({ style: z.enum(CORNER_DOT_STYLES).catch("square"), color: hex.catch("#000000") })
+        .catch({ style: "square", color: "#000000" }),
     logo: z
         .object({
             preset: z.string().nullable().catch(null),

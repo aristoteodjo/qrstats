@@ -46,7 +46,9 @@ function Help() {
                 <div className="bg-card grid max-w-3xl divide-y rounded-xl border">
                     {FAQ.map((item) => (
                         <details key={item.q} className="group px-5">
-                            <summary className="font-heading flex min-h-14 cursor-pointer items-center py-3 font-semibold">{item.q}</summary>
+                            <summary className="font-heading flex min-h-14 cursor-pointer items-center py-3 font-semibold">
+                                {item.q}
+                            </summary>
                             <p className="text-muted-foreground pb-5 text-sm leading-relaxed">{item.a}</p>
                         </details>
                     ))}

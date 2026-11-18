@@ -12,7 +12,9 @@ function TooltipBox({ title, rows }: { title: string; rows: Array<{ label: strin
             <p className="font-medium">{title}</p>
             {rows.map((row) => (
                 <p key={row.label} className="flex items-center gap-2">
-                    {row.color ? <span className="size-2.5 rounded-full" style={{ background: row.color }} aria-hidden="true" /> : null}
+                    {row.color ? (
+                        <span className="size-2.5 rounded-full" style={{ background: row.color }} aria-hidden="true" />
+                    ) : null}
                     <span className="text-muted-foreground">{row.label}</span>
                     <span className="ml-auto pl-3 font-medium tabular-nums">{count(row.value)}</span>
                 </p>
@@ -105,7 +107,13 @@ export function SlotsChart({ values, labels, unit }: { values: Array<number>; la
                             ) : null
                         }
                     />
-                    <Bar dataKey="value" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={28} isAnimationActive={false} />
+                    <Bar
+                        dataKey="value"
+                        fill="var(--chart-1)"
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={28}
+                        isAnimationActive={false}
+                    />
                 </BarChart>
             </ResponsiveContainer>
         </div>

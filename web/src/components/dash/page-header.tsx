@@ -3,7 +3,15 @@ import type { ReactNode } from "react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 /** Page top: sidebar toggle on mobile, the one h1, its main actions. */
-export function PageHeader({ title, description, actions }: { title: ReactNode; description?: ReactNode; actions?: ReactNode }) {
+export function PageHeader({
+    title,
+    description,
+    actions,
+}: {
+    title: ReactNode
+    description?: ReactNode
+    actions?: ReactNode
+}) {
     return (
         <header className="flex flex-wrap items-center justify-between gap-4 px-4 pt-6 sm:px-6 lg:px-10 lg:pt-10">
             <div className="flex min-w-0 items-center gap-3">

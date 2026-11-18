@@ -56,7 +56,9 @@ function ProfileForm({ name }: { name: string }) {
                     void form.handleSubmit()
                 }}
             >
-                <form.AppField name="name">{(field) => <field.TextField label="Nom" autoComplete="name" className="h-11" />}</form.AppField>
+                <form.AppField name="name">
+                    {(field) => <field.TextField label="Nom" autoComplete="name" className="h-11" />}
+                </form.AppField>
                 {update.error ? (
                     <p role="alert" className="text-destructive text-sm">
                         {update.error.message}
@@ -104,10 +106,24 @@ function PasswordForm() {
                 }}
             >
                 <form.AppField name="currentPassword">
-                    {(field) => <field.TextField label="Mot de passe actuel" type="password" autoComplete="current-password" className="h-11" />}
+                    {(field) => (
+                        <field.TextField
+                            label="Mot de passe actuel"
+                            type="password"
+                            autoComplete="current-password"
+                            className="h-11"
+                        />
+                    )}
                 </form.AppField>
                 <form.AppField name="newPassword">
-                    {(field) => <field.TextField label="Nouveau mot de passe" type="password" autoComplete="new-password" className="h-11" />}
+                    {(field) => (
+                        <field.TextField
+                            label="Nouveau mot de passe"
+                            type="password"
+                            autoComplete="new-password"
+                            className="h-11"
+                        />
+                    )}
                 </form.AppField>
                 {change.error ? (
                     <p role="alert" className="text-destructive text-sm">

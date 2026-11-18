@@ -56,7 +56,11 @@ function ScanLanding() {
                 <Message
                     icon={<SearchXIcon className="size-8" aria-hidden="true" />}
                     title={missing ? "QR code introuvable" : "Ce QR code ne répond pas"}
-                    text={missing ? "Ce code n'existe pas ou a été supprimé par son propriétaire." : "Réessayez dans quelques instants."}
+                    text={
+                        missing
+                            ? "Ce code n'existe pas ou a été supprimé par son propriétaire."
+                            : "Réessayez dans quelques instants."
+                    }
                 />
             </Shell>
         )
@@ -76,7 +80,12 @@ function ScanLanding() {
     if (!opened) {
         return (
             <Shell>
-                <PasswordGate name={view.data.name} pending={unlock.isPending} error={unlock.error} onSubmit={(password) => unlock.mutate(password)} />
+                <PasswordGate
+                    name={view.data.name}
+                    pending={unlock.isPending}
+                    error={unlock.error}
+                    onSubmit={(password) => unlock.mutate(password)}
+                />
             </Shell>
         )
     }
@@ -130,7 +139,9 @@ function PasswordGate({
                 }}
             >
                 <form.AppField name="password">
-                    {(field) => <field.TextField label="Mot de passe" type="password" autoComplete="off" className="h-11" />}
+                    {(field) => (
+                        <field.TextField label="Mot de passe" type="password" autoComplete="off" className="h-11" />
+                    )}
                 </form.AppField>
                 {error ? (
                     <p role="alert" className="text-destructive text-sm">
@@ -228,7 +239,11 @@ function Content({ view }: { view: PublicView }) {
                                     <dt className="text-muted-foreground text-xs">{label}</dt>
                                     <dd className="break-words">
                                         {href ? (
-                                            <a href={href} className="text-primary inline-flex min-h-11 items-center hover:underline" rel="noreferrer noopener">
+                                            <a
+                                                href={href}
+                                                className="text-primary inline-flex min-h-11 items-center hover:underline"
+                                                rel="noreferrer noopener"
+                                            >
                                                 {value}
                                             </a>
                                         ) : (
@@ -240,7 +255,12 @@ function Content({ view }: { view: PublicView }) {
                     </dl>
                     <Button
                         className="min-h-11"
-                        onClick={() => downloadBlob(fileName(full, "vcf"), new Blob([vcardText(c)], { type: "text/vcard;charset=utf-8" }))}
+                        onClick={() =>
+                            downloadBlob(
+                                fileName(full, "vcf"),
+                                new Blob([vcardText(c)], { type: "text/vcard;charset=utf-8" }),
+                            )
+                        }
                     >
                         Ajouter aux contacts
                     </Button>
@@ -272,7 +292,9 @@ function Content({ view }: { view: PublicView }) {
             return (
                 <>
                     {header}
-                    <p className="text-muted-foreground text-sm">Ce code se scanne directement avec l'appareil photo pour rejoindre le réseau.</p>
+                    <p className="text-muted-foreground text-sm">
+                        Ce code se scanne directement avec l'appareil photo pour rejoindre le réseau.
+                    </p>
                 </>
             )
     }

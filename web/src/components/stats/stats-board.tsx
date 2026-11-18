@@ -56,7 +56,11 @@ export function StatsBoard({ qrCodeId }: { qrCodeId?: string }) {
                 <>
                     <div className="bg-card overflow-hidden rounded-xl border">
                         <KpiStrip label="Chiffres clés" className="border-b-0 bg-transparent">
-                            <Kpi label="Scans" value={count(stats.data.scans)} aside={<Trend now={stats.data.scans} before={stats.data.previous.scans} />} />
+                            <Kpi
+                                label="Scans"
+                                value={count(stats.data.scans)}
+                                aside={<Trend now={stats.data.scans} before={stats.data.previous.scans} />}
+                            />
                             <Kpi
                                 label="Visiteurs uniques"
                                 value={count(stats.data.uniques)}
@@ -65,7 +69,11 @@ export function StatsBoard({ qrCodeId }: { qrCodeId?: string }) {
                             />
                             <Kpi
                                 label="Scans par visiteur"
-                                value={stats.data.uniques ? (stats.data.scans / stats.data.uniques).toFixed(1).replace(".", ",") : "0"}
+                                value={
+                                    stats.data.uniques
+                                        ? (stats.data.scans / stats.data.uniques).toFixed(1).replace(".", ",")
+                                        : "0"
+                                }
                             />
                             <Kpi label="Heure de pointe" value={peakHour(stats.data.hours)} />
                         </KpiStrip>
@@ -73,7 +81,9 @@ export function StatsBoard({ qrCodeId }: { qrCodeId?: string }) {
 
                     {stats.data.scans === 0 ? (
                         <div className="bg-card text-muted-foreground grid place-items-center gap-2 rounded-xl border p-10 text-center text-sm">
-                            <p className="text-foreground font-heading text-lg font-semibold">Aucun scan sur cette période</p>
+                            <p className="text-foreground font-heading text-lg font-semibold">
+                                Aucun scan sur cette période
+                            </p>
                             <p>Les scans apparaissent ici dès qu'un téléphone ouvre le code imprimé.</p>
                         </div>
                     ) : (
@@ -81,7 +91,9 @@ export function StatsBoard({ qrCodeId }: { qrCodeId?: string }) {
                             <Panel title="Scans par jour">
                                 <ScansChart series={stats.data.series} />
                                 <details className="text-sm">
-                                    <summary className="text-primary min-h-11 cursor-pointer content-center">Voir les chiffres en tableau</summary>
+                                    <summary className="text-primary min-h-11 cursor-pointer content-center">
+                                        Voir les chiffres en tableau
+                                    </summary>
                                     <div className="max-h-72 overflow-auto">
                                         <table className="w-full text-left text-sm">
                                             <thead className="text-muted-foreground">
@@ -95,8 +107,12 @@ export function StatsBoard({ qrCodeId }: { qrCodeId?: string }) {
                                                 {stats.data.series.map((point) => (
                                                     <tr key={point.date} className="border-t">
                                                         <td className="py-1.5">{shortDay(point.date)}</td>
-                                                        <td className="py-1.5 text-right tabular-nums">{count(point.scans)}</td>
-                                                        <td className="py-1.5 text-right tabular-nums">{count(point.uniques)}</td>
+                                                        <td className="py-1.5 text-right tabular-nums">
+                                                            {count(point.scans)}
+                                                        </td>
+                                                        <td className="py-1.5 text-right tabular-nums">
+                                                            {count(point.uniques)}
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -108,20 +124,42 @@ export function StatsBoard({ qrCodeId }: { qrCodeId?: string }) {
                             <div className="grid gap-4 lg:grid-cols-2">
                                 <Panel title="Heures de scan" note="Dans votre fuseau horaire">
                                     <SlotsChart values={stats.data.hours} labels={HOURS} unit="À" />
-                                    <SrList label="Scans par heure" items={stats.data.hours.map((value, hour) => [HOURS[hour], value])} />
+                                    <SrList
+                                        label="Scans par heure"
+                                        items={stats.data.hours.map((value, hour) => [HOURS[hour], value])}
+                                    />
                                 </Panel>
                                 <Panel title="Jours de la semaine">
                                     <SlotsChart values={stats.data.weekdays} labels={WEEKDAYS} unit="Le" />
-                                    <SrList label="Scans par jour de la semaine" items={stats.data.weekdays.map((value, day) => [WEEKDAYS[day], value])} />
+                                    <SrList
+                                        label="Scans par jour de la semaine"
+                                        items={stats.data.weekdays.map((value, day) => [WEEKDAYS[day], value])}
+                                    />
                                 </Panel>
                             </div>
 
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                                 {(Object.keys(DIMENSIONS) as Array<Dimension>)
-                                    .filter((dimension) => !dimension.startsWith("utm_") || hasValues(stats.data.breakdowns[dimension]))
+                                    .filter(
+                                        (dimension) =>
+                                            !dimension.startsWith("utm_") ||
+                                            hasValues(stats.data.breakdowns[dimension]),
+                                    )
                                     .map((dimension) => (
-                                        <Panel key={dimension} title={DIMENSIONS[dimension]} note={dimension === "country" || dimension === "city" ? locationNote(stats.data.breakdowns[dimension]) : undefined}>
-                                            <BarList dimension={dimension} buckets={stats.data.breakdowns[dimension] ?? []} total={stats.data.scans} />
+                                        <Panel
+                                            key={dimension}
+                                            title={DIMENSIONS[dimension]}
+                                            note={
+                                                dimension === "country" || dimension === "city"
+                                                    ? locationNote(stats.data.breakdowns[dimension])
+                                                    : undefined
+                                            }
+                                        >
+                                            <BarList
+                                                dimension={dimension}
+                                                buckets={stats.data.breakdowns[dimension] ?? []}
+                                                total={stats.data.scans}
+                                            />
                                         </Panel>
                                     ))}
                             </div>
@@ -136,7 +174,9 @@ export function StatsBoard({ qrCodeId }: { qrCodeId?: string }) {
                                                     params={{ id: code.id }}
                                                     className="hover:bg-muted flex min-h-12 items-center gap-3 rounded-lg px-2"
                                                 >
-                                                    <span className="text-muted-foreground w-5 text-sm tabular-nums">{index + 1}</span>
+                                                    <span className="text-muted-foreground w-5 text-sm tabular-nums">
+                                                        {index + 1}
+                                                    </span>
                                                     <KindIcon kind={code.kind as Kind} className="size-8" />
                                                     <span className="flex-1 truncate font-medium">{code.name}</span>
                                                     <span className="tabular-nums">{count(code.scans)} scans</span>
@@ -205,11 +245,15 @@ function BarList({ dimension, buckets, total }: { dimension: Dimension; buckets:
                     <div className="flex items-baseline justify-between gap-3 text-sm">
                         <span className="truncate">{bucketLabel(dimension, bucket.key)}</span>
                         <span className="text-muted-foreground shrink-0 tabular-nums">
-                            <span className="text-foreground font-medium">{count(bucket.count)}</span> · {percent(total ? bucket.count / total : 0)}
+                            <span className="text-foreground font-medium">{count(bucket.count)}</span> (
+                            {percent(total ? bucket.count / total : 0)})
                         </span>
                     </div>
                     <div className="bg-muted h-1.5 overflow-hidden rounded-full" aria-hidden="true">
-                        <div className="bg-chart-1 h-full rounded-full" style={{ width: `${(bucket.count / max) * 100}%` }} />
+                        <div
+                            className="bg-chart-1 h-full rounded-full"
+                            style={{ width: `${(bucket.count / max) * 100}%` }}
+                        />
                     </div>
                 </li>
             ))}

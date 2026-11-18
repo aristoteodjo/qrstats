@@ -12,19 +12,15 @@ Mémoire des agents et document d'architecture vivant. Le lire avant toute modif
 
 ## Utilisateurs et espaces
 
-| Hôte | Espace | Public |
-| --- | --- | --- |
-| domaine nu, `www.` | `site` | landing, pages légales, page de scan `/q/<slug>` |
-| `app.` | `app` | tableau de bord : analyses, QR codes, compte, aide |
-| hôte de l'API (`VITE_SHORT_URL`) | API Go | `/r/<slug>` (redirection + comptage), `/api/v1` |
+Un seul hôte pour le web (décision du 2026-11-18, remplace les espaces `site` / `app.`) : le site public (`/`, pages légales, `/connexion`, `/inscription`, page de scan `/q/<slug>`) et l'espace connecté (`/analyses`, `/qr-codes`, `/compte`, `/aide`, layout `_app`, `ssr: false`) partagent le même domaine. L'API Go est sur son propre hôte (`VITE_SHORT_URL`) : `/r/<slug>` (redirection + comptage) et `/api/v1`.
 
-En dev : `localhost:3110` (site), `app.localhost:3110` (app), `localhost:8110` (API). `lib/spaces.ts` résout l'espace par l'hôte (hôte inconnu = 404). Le nom d'hôte choisit l'interface, jamais les droits.
+En dev : `localhost:3110` (web, écoute IPv4 et IPv6), `localhost:8110` (API).
 
 Comptes personnels : chaque utilisateur possède ses codes (`qr_codes.owner_subject` = `sub` du JWT). Pas d'organisation ni de rôle pour l'instant.
 
 ## Authentification
 
-Better Auth dans `web/` (email + mot de passe, tables dans le schéma Postgres `better_auth`, créé par la migration de l'API ; tables créées par `POST /api/maintenance/auth-migrate` avec `MAINTENANCE_SECRET`). Le plugin `jwt` émet un jeton EdDSA de 15 min (audience `qrstats-api`) ; l'API le vérifie avec le JWKS `/api/auth/jwks` (`internal/platform/jwks`). Jeton gardé en mémoire côté navigateur, session en cookie httpOnly. La connexion se fait sur `app.` (le site redirige).
+Better Auth dans `web/` (email + mot de passe, tables dans le schéma Postgres `better_auth`, créé par la migration de l'API ; tables créées par `POST /api/maintenance/auth-migrate` avec `MAINTENANCE_SECRET`). Le plugin `jwt` émet un jeton EdDSA de 15 min (audience `qrstats-api`) ; l'API le vérifie avec le JWKS `/api/auth/jwks` (`internal/platform/jwks`). Jeton gardé en mémoire côté navigateur, session en cookie httpOnly. Pages `/connexion` et `/inscription` (TanStack Form : validation au blur et à la soumission, règles dans `lib/auth-forms.ts`, codes d'erreur Better Auth traduits).
 
 ## Barre de qualité
 
@@ -62,7 +58,7 @@ Le design est un objet JSON opaque pour l'API (≤ 400 Ko, logo inclus), dont le
 
 ## Identité visuelle
 
-Tirée des captures de référence (MyQRCode) : cobalt `#3460e6` pour les actions, fond bleu-gris `#f3f5fa`, cartes blanches, rayons 12 px. Polices : Bricolage Grotesque (titres, chiffres), Inter Tight (interface), JetBrains Mono (slugs, libellés). Graphiques : palette catégorielle de référence (slots 1 et 2), clair et sombre, jetons dans `styles.css`.
+Un seul motif : la grammaire du QR code (carrés de repérage, modules), dans le panneau d'authentification (`FinderArt`) et les pages 404/500 (`StatusPage`, un code cassé). Outremer `#2d3cf0` pour les actions, encre `#14161f`, fond `#f6f7f9`, panneau sombre `--hero`. Polices : Bricolage Grotesque (titres, chiffres), Inter Tight (interface), JetBrains Mono uniquement pour les slugs imprimés. Pas de libellés en capitales, pas de séparateurs « · ». Coins du QR pleins par défaut (lisibilité). Graphiques : palette catégorielle de référence (slots 1 et 2), clair et sombre, jetons dans `styles.css`.
 
 ## Accessibilité
 
@@ -98,14 +94,15 @@ Vercel, deux projets : `web/` (TanStack Start, Nitro) et `api/` (fonction Go `ap
 2. QR codes dynamiques : assistant 3 étapes (type, contenu, aspect), aperçu téléphone, destination modifiable, pause, mot de passe, téléchargement PNG/SVG, page de scan. **Fait (2026-11-18).**
 3. Suivi des scans et analyses (globales et par code). **Fait (2026-11-18).**
 3b. Liste des QR codes en cartes (miniature, lien court, destination, scans, dates, statut, partage, téléchargement), filtres statut/type, tri, actions groupées, renommage. **Fait (2026-11-18).**
-4. Vérification visuelle dans le navigateur (non faite : voir Pièges connus).
+4. Refonte visuelle (auth, accueil, 404/500, barre latérale) vérifiée dans Chrome headless local (`playwright-core`, parcours inscription → création → liste → analyses). **Fait (2026-11-18).**
 5. Export CSV des scans, comparaison de codes, filtres par pays/appareil dans les analyses.
 6. Facturation et limites par offre (si décidé).
 
 ## Décisions
 
 ### Prises
-- 2026-11-18 : backend Go (gin, gorm, Postgres) pour la redirection et le suivi ; comptes personnels ; espaces site + app. + domaine court de l'API ; déploiement Vercel.
+- 2026-11-18 : backend Go (gin, gorm, Postgres) pour la redirection et le suivi ; comptes personnels ; déploiement Vercel.
+- 2026-11-18 : un seul hôte web au lieu de `site` + `app.` : `app.localhost` ne se résolvait qu'en IPv6 sur macOS et Safari n'atteignait pas l'app ; un hôte unique supprime aussi les cookies inter-domaines et les redirections de connexion.
 - 2026-11-18 : tracking : scans, uniques (sans IP), appareil/OS/navigateur, pays/ville (en-têtes de la plateforme), langue, provenance, UTM, heure et jour de semaine, comparaison avec la période précédente.
 - 2026-11-18 : shadcn en variante Radix (comme charlomi, dont les composants sont copiés), pas Base UI.
 - 2026-11-18 : liste calquée sur la capture MyQRCode ; bandeau « Essai gratuit », sondage et compteur de jours d'essai non repris tant que l'offre n'est pas décidée.
@@ -123,6 +120,7 @@ Vercel, deux projets : `web/` (TanStack Start, Nitro) et `api/` (fonction Go `ap
 ## Pièges connus
 
 - gorm cite `Group("1")` comme une colonne : grouper par alias (`Group("date")`, `Group("key")`).
-- Les cookies de session ne se partagent pas entre `localhost` et `app.localhost` en dev : se connecter sur `app.localhost:3110`.
+- `*.localhost` se résout en `::1` seulement sur macOS : le serveur de dev doit écouter en IPv6 (`vite dev --host ::`).
+- Une ventilation vide doit sortir en `[]`, jamais `null` (le schéma zod du web la refuse) : `TopBuckets` part de `[]Bucket{}`.
 - Le serveur web de Portly n'a pas `pnpm` dans son PATH : la commande exporte le PATH nvm.
-- Le Chrome relié à Claude in Chrome tournait sous Windows (autre machine) le 2026-11-18 : `localhost` du Mac y est injoignable, la vérification visuelle reste à faire.
+- Le Chrome relié à Claude in Chrome tournait sous Windows (autre machine) le 2026-11-18 : vérifier avec le Chrome local en headless (`playwright-core` et `executablePath` de Google Chrome).

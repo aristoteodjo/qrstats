@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute, notFound } from "@tanstack/react-router"
+import { Outlet, createFileRoute } from "@tanstack/react-router"
 
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { SignInRedirect } from "@/components/shared/sign-in-redirect"
@@ -9,9 +9,6 @@ import { useSession } from "@/hooks/use-session"
 export const Route = createFileRoute("/_app")({
     // The session lives in the browser: rendering on the server would only flash an empty shell.
     ssr: false,
-    beforeLoad: ({ context }) => {
-        if (context.space.kind !== "app") throw notFound()
-    },
     component: AppLayout,
 })
 

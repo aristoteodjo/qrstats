@@ -161,7 +161,7 @@ export function QrRow({ qr, selected, onSelect, onRename, onToggle, onDelete, to
                 <div className="grid gap-0.5 text-sm">
                     <p>Création : {moment(qr.created_at)}</p>
                     <p className="text-muted-foreground">Modification : {moment(qr.updated_at)}</p>
-                    {recentlyEdited ? <p className="label text-muted-foreground">Récemment modifié</p> : null}
+                    {recentlyEdited ? <p className="text-primary text-xs font-medium">Récemment modifié</p> : null}
                 </div>
 
                 <p className="flex items-center gap-2 text-sm font-medium lg:justify-center lg:border-x lg:px-2">

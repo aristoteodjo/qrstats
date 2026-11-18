@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port 3110 --host 0.0.0.0",
+    "dev": "vite dev --port 3110 --host ::",
     "build": "vite build",
-    "preview": "vite preview --port 3110",
+    "preview": "vite preview --port 3110 --host ::",
     "lint": "eslint",
     "format": "prettier --write . && eslint --fix",
     "check-types": "tsc --noEmit",

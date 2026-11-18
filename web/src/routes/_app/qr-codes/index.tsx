@@ -111,7 +111,7 @@ function QrCodes() {
                         }
                         aria-label="Sélectionner tous les QR codes de la page"
                     />
-                    <div className="bg-card min-w-56 flex-1 rounded-lg border px-3 sm:max-w-sm">
+                    <div className="bg-card min-h-11 min-w-56 flex-1 rounded-lg border px-3 shadow-xs sm:max-w-sm">
                         <SearchField
                             value={text}
                             onChange={setText}

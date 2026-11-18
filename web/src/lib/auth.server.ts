@@ -5,7 +5,6 @@ import { PostgresDialect } from "kysely"
 import { Pool } from "pg"
 
 const production = process.env.NODE_ENV === "production"
-const rootDomain = process.env.VITE_ROOT_DOMAIN ?? "localhost"
 const baseURL = process.env.BETTER_AUTH_URL ?? "http://localhost:3110"
 
 const pool = new Pool({
@@ -18,7 +17,7 @@ export const auth = betterAuth({
     appName: "qrstats",
     baseURL,
     secret: process.env.BETTER_AUTH_SECRET,
-    trustedOrigins: (process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? "http://localhost:3110,http://app.localhost:3110").split(
+    trustedOrigins: (process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? "http://localhost:3110,http://127.0.0.1:3110").split(
         ",",
     ),
     // Schema-qualified queries, not a search_path option: connection poolers (Neon, PgBouncer) refuse it.
@@ -29,11 +28,6 @@ export const auth = betterAuth({
     advanced: {
         cookiePrefix: "qrstats",
         useSecureCookies: production,
-        // One session across the site and app.; browsers refuse a Domain=localhost cookie, so dev stays per host.
-        crossSubDomainCookies: {
-            enabled: rootDomain !== "localhost" && !process.env.VITE_SPACE_HOSTS,
-            domain: rootDomain,
-        },
     },
     plugins: [
         jwt({

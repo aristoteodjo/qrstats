@@ -3,7 +3,6 @@ import type { ReactNode } from "react"
 
 import { Brand } from "@/components/layout/brand"
 import { Button } from "@/components/ui/button"
-import { appHref } from "@/lib/current-space"
 
 export function SiteLayout({ children }: { children: ReactNode }) {
     return (
@@ -14,10 +13,10 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 </Link>
                 <nav aria-label="Compte" className="flex items-center gap-2">
                     <Button asChild variant="ghost" className="min-h-11">
-                        <a href={appHref("/connexion")}>Se connecter</a>
+                        <Link to="/connexion">Se connecter</Link>
                     </Button>
                     <Button asChild className="min-h-11">
-                        <a href={appHref("/connexion?mode=inscription")}>Créer un compte</a>
+                        <Link to="/inscription">Créer un compte</Link>
                     </Button>
                 </nav>
             </header>

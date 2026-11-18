@@ -60,7 +60,7 @@ function QrDetail() {
                 title={code.name}
                 description={
                     <span className="flex flex-wrap items-center gap-2">
-                        {KIND_LABELS[code.kind].title} · créé le {moment(code.created_at)}
+                        {KIND_LABELS[code.kind].title}, créé le {moment(code.created_at)}
                         {!dynamic ? (
                             <StatusPill tone="neutral">Statique</StatusPill>
                         ) : code.status === "active" ? (
@@ -127,7 +127,7 @@ function QrDetail() {
                         className="bg-card grid content-start gap-5 rounded-xl border p-5"
                     >
                         <div className="grid gap-1">
-                            <h2 className="label text-muted-foreground">Mène vers</h2>
+                            <h2 className="text-muted-foreground text-sm font-medium">Mène vers</h2>
                             <p className="font-heading text-lg font-semibold break-all">
                                 {summary(code.kind, code.content)}
                             </p>
@@ -144,7 +144,7 @@ function QrDetail() {
                         </div>
                         {dynamic ? (
                             <div className="grid gap-2">
-                                <h2 className="label text-muted-foreground">Lien imprimé dans le code</h2>
+                                <h2 className="text-muted-foreground text-sm font-medium">Lien imprimé dans le code</h2>
                                 <div className="flex flex-wrap items-center gap-2">
                                     <code className="bg-muted rounded-md px-3 py-2 font-mono text-sm break-all">
                                         {link}

@@ -18,9 +18,9 @@ export const Route = createFileRoute("/confidentialite")({
             <p>
                 À chaque scan, qrstats enregistre la date et l'heure, le type d'appareil, le système, le navigateur, la
                 langue préférée, le site de provenance s'il y en a un, les paramètres de campagne (UTM) et le pays et la
-                ville déduits par l'hébergeur. <strong>Aucune adresse IP n'est conservée</strong> : un visiteur unique est
-                reconnu par une empreinte chiffrée qui change chaque jour et ne permet pas de le suivre d'un jour à l'autre.
-                Les robots et les aperçus de messagerie ne sont pas enregistrés.
+                ville déduits par l'hébergeur. <strong>Aucune adresse IP n'est conservée</strong> : un visiteur unique
+                est reconnu par une empreinte chiffrée qui change chaque jour et ne permet pas de le suivre d'un jour à
+                l'autre. Les robots et les aperçus de messagerie ne sont pas enregistrés.
             </p>
             <h2>Finalités et base légale</h2>
             <p>
@@ -32,8 +32,8 @@ export const Route = createFileRoute("/confidentialite")({
             </p>
             <h2>Vos droits</h2>
             <p>
-                Accès, rectification, effacement, opposition et portabilité : écrivez à <Todo />. Vous pouvez aussi saisir
-                l'autorité de protection des données compétente.
+                Accès, rectification, effacement, opposition et portabilité : écrivez à <Todo />. Vous pouvez aussi
+                saisir l'autorité de protection des données compétente.
             </p>
         </LegalPage>
     ),

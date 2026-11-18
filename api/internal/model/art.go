@@ -6,6 +6,8 @@ const (
 	ArtPending   = "pending"
 	ArtSucceeded = "succeeded"
 	ArtFailed    = "failed"
+	// ArtAborted never reached the provider (it refused the request): the only status that gives the quota slot back.
+	ArtAborted = "aborted"
 )
 
 // ArtJob is one AI artwork requested for a QR code. Kept after the code is deleted: the daily quota counts it.

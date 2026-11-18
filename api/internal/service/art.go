@@ -44,7 +44,7 @@ type Painter interface {
 }
 
 type ArtStore interface {
-	// Reserve inserts the job if the owner has used fewer than limit non-failed jobs since `since`, atomically per
+	// Reserve inserts the job if the owner has used fewer than limit non-aborted jobs since `since`, atomically per
 	// owner, and returns the count including it. ErrArtQuota when full.
 	Reserve(ctx context.Context, job *model.ArtJob, since time.Time, limit int) (int, error)
 	Used(ctx context.Context, owner string, since time.Time) (int, error)
@@ -158,7 +158,7 @@ func (s *Art) Start(ctx context.Context, owner, codeID string, in ArtStartInput)
 	quota := ArtQuota{Available: true, Limit: s.limit, Used: used, Remaining: max(s.limit-used, 0)}
 	predictionID, err := s.painter.Start(ctx, ArtInput(prompt, in.Style, s.shortURL+"/r/"+qr.Slug))
 	if err != nil {
-		_ = s.store.SetStatus(ctx, job.ID, model.ArtFailed)
+		_ = s.store.SetStatus(ctx, job.ID, model.ArtAborted)
 		return nil, ArtQuota{}, errors.Join(ErrArtProvider, err)
 	}
 	if err := s.store.SetPrediction(ctx, job.ID, predictionID); err != nil {
@@ -168,7 +168,7 @@ func (s *Art) Start(ctx context.Context, owner, codeID string, in ArtStartInput)
 	return job, quota, nil
 }
 
-// Result polls the provider; a failed artwork gives its quota slot back.
+// Result polls the provider. A failed run keeps its quota slot: the provider bills it all the same.
 func (s *Art) Result(ctx context.Context, owner, id string) (ArtResult, error) {
 	if s.painter == nil {
 		return ArtResult{}, ErrArtUnavailable
@@ -177,7 +177,7 @@ func (s *Art) Result(ctx context.Context, owner, id string) (ArtResult, error) {
 	if err != nil {
 		return ArtResult{}, err
 	}
-	if job.Status == model.ArtFailed || job.PredictionID == "" {
+	if job.Status == model.ArtFailed || job.Status == model.ArtAborted || job.PredictionID == "" {
 		return ArtResult{ID: job.ID, Status: model.ArtFailed, Error: "La génération a échoué."}, nil
 	}
 	prediction, err := s.painter.Poll(ctx, job.PredictionID)

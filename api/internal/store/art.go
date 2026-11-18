@@ -18,12 +18,12 @@ func NewArtStore(db *gorm.DB) *ArtStore { return &ArtStore{db: db} }
 func countArt(tx *gorm.DB, owner string, since time.Time) (int, error) {
 	var used int64
 	err := tx.Model(&model.ArtJob{}).
-		Where("owner_subject = ? AND created_at > ? AND status <> ?", owner, since, model.ArtFailed).
+		Where("owner_subject = ? AND created_at > ? AND status <> ?", owner, since, model.ArtAborted).
 		Count(&used).Error
 	return int(used), err
 }
 
-// Reserve counts and inserts under a per-owner advisory lock, so two concurrent requests never share the last slot.
+// Reserve counts every job but aborted ones (a failed run is still billed), and inserts under a per-owner advisory lock, so two concurrent requests never share the last slot.
 func (s *ArtStore) Reserve(ctx context.Context, job *model.ArtJob, since time.Time, limit int) (int, error) {
 	var used int
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

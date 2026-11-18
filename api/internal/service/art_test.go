@@ -19,7 +19,7 @@ type memoryArt struct {
 func (m *memoryArt) count(owner string, since time.Time) int {
 	n := 0
 	for _, j := range m.jobs {
-		if j.OwnerSubject == owner && j.CreatedAt.After(since) && j.Status != model.ArtFailed {
+		if j.OwnerSubject == owner && j.CreatedAt.After(since) && j.Status != model.ArtAborted {
 			n++
 		}
 	}
@@ -154,7 +154,7 @@ func TestArtEncodesTheShortLinkAndCountsTheQuota(t *testing.T) {
 	}
 }
 
-func TestArtFailuresGiveTheSlotBack(t *testing.T) {
+func TestOnlyAnAbortedStartGivesTheSlotBack(t *testing.T) {
 	painter := &fakePainter{startErr: errors.New("down")}
 	art, link, _ := artFixture(t, painter, 1)
 	ctx := context.Background()
@@ -169,7 +169,7 @@ func TestArtFailuresGiveTheSlotBack(t *testing.T) {
 	if res, _ := art.Result(ctx, "alice", job.ID); res.Status != model.ArtFailed {
 		t.Fatalf("failed: %+v", res)
 	}
-	if quota, _ := art.Quota(ctx, "alice"); quota.Remaining != 1 {
+	if quota, _ := art.Quota(ctx, "alice"); quota.Remaining != 0 {
 		t.Fatalf("quota after failure: %+v", quota)
 	}
 }

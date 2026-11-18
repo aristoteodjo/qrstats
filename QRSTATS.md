@@ -53,8 +53,14 @@ Précédence par paramètre : variante scannée (`/r/<slug>?utm_source=affiche`)
 ### Statistiques
 `GET /api/v1/stats?from&to&tz&qr_code_id` : totaux, période précédente de même longueur, série par jour, heures, jours de semaine, ventilations (appareil, OS, navigateur, pays, ville, langue, provenance, UTM) repliées au-delà de 8 en « Autres », top 5 des codes. Pays et ville viennent des en-têtes Vercel/Cloudflare : vides en local.
 
+### Création sans compte (`/creer`)
+Même éditeur en mode `guest` : types lien, texte, Wi-Fi, e-mail, appel (`GUEST_KINDS`), contenu écrit dans le motif (`staticPayload`) donc ni modifiable ni comptabilisé, pas de logo ni de cadre, export PNG 512 px seulement. Rien ne passe par l'API. Les limites sont côté navigateur (un code statique ne coûte rien au serveur) ; elles servent l'offre, pas la sécurité. Comparatif « Avec ou sans compte » (`PlanComparison`) sur `/creer` et l'accueil.
+
+### Éditeur
+L'étape et le type sont dans l'URL (`?etape=1|2|3&type=`), le brouillon (contenu, nom, apparence, jamais de mot de passe) dans le `sessionStorage` de l'onglet (`lib/draft.ts`, clés `qrstats:draft:new|guest|edit:<id>`). Quitter la page ou recharger reprend au même endroit ; le brouillon est effacé après l'enregistrement. Un brouillon de modification ne s'applique qu'à la version du code dont il est parti (`stamp` = `updated_at`).
+
 ### Apparence
-Le design est un objet JSON opaque pour l'API (≤ 400 Ko, logo inclus), dont le web possède la forme (`designSchema`, lecture tolérante). Rendu `qr-code-styling` + cadres SVG maison (`lib/qr-render.ts`), export PNG 2048 px et SVG. Logo : 14 marques (simple-icons, CC0) ou image redimensionnée à 256 px. Correction d'erreur H avec logo, Q sinon.
+Le design est un objet JSON opaque pour l'API (≤ 400 Ko, logo inclus), dont le web possède la forme (`designSchema`, lecture tolérante). Rendu `qr-code-styling` + cadres SVG maison (`lib/qr-render.ts`) : le QR est imbriqué en `<svg>` vectoriel (jamais en `<image>`, flou une fois agrandi), marge de silence de 5 %. Export compte : PNG 1024, 2048 ou 4096 px (dessiné à la taille finale) et SVG vectoriel. Logo : 14 marques (simple-icons, CC0), SVG importé gardé vectoriel, ou image ramenée à 1024 px en WebP (design de 1,5 Mo au plus côté API). Correction d'erreur H avec logo, Q sinon.
 
 ## Identité visuelle
 
@@ -119,6 +125,7 @@ Vercel, équipe `riri122s-projects`, deux projets déployés en CLI depuis leur 
 - 2026-11-18 : liste calquée sur la capture MyQRCode ; bandeau « Essai gratuit », sondage et compteur de jours d'essai non repris tant que l'offre n'est pas décidée.
 - 2026-11-18 : pas de champ téléphone international (phone-input de charlomi non copié) : l'auth est email + mot de passe.
 
+- 2026-11-18 : création sans compte autorisée (codes statiques, types et export limités) pour donner envie de créer un compte.
 - 2026-11-18 : pages légales : éditeur Aristote ODJO, particulier (adresse non publiée), contact public `oaristote@gmail.com`, hébergeur Vercel Inc., base Neon Inc., droit béninois (Code du numérique, loi 2017-20), autorité APDP. Scans conservés tant que le QR code existe (effacés avec lui). Suppression de compte sur demande par e-mail (pas encore de bouton).
 
 ### Ouvertes (ne pas trancher à la place du porteur du projet)

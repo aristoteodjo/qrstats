@@ -1,7 +1,9 @@
-import { useNavigate } from "@tanstack/react-router"
+import { Link, useNavigate } from "@tanstack/react-router"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useStore } from "@tanstack/react-form"
 import {
+    DownloadIcon,
+    SparklesIcon,
     ArrowLeftIcon,
     ArrowRightIcon,
     CheckIcon,
@@ -12,7 +14,7 @@ import {
     MegaphoneIcon,
     PencilIcon,
 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { DesignSections } from "@/components/qr/design-panel"
@@ -27,14 +29,26 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { useAppForm } from "@/hooks/form"
 import { ApiError, errorMessage, shortLink } from "@/lib/api"
-import { KINDS, KIND_LABELS, emptyContent, isDynamic, qrPayload, readContent, readDesign } from "@/lib/qr"
+import {
+    GUEST_HINTS,
+    GUEST_KINDS,
+    KINDS,
+    KIND_LABELS,
+    emptyContent,
+    isDynamic,
+    qrPayload,
+    readContent,
+    readDesign,
+    staticPayload,
+} from "@/lib/qr"
 import type { Contents, Design, Kind, QRCode } from "@/lib/qr"
 import { createQr, isQr, updateQr } from "@/lib/qrcodes"
 import type { QRPatch } from "@/lib/qrcodes"
 import { emailProblem, forKind, phoneProblem, requiredProblem, urlProblem } from "@/lib/qr-rules"
+import { clearDraft, draftKey, effectiveStep, loadDraft, saveDraft } from "@/lib/draft"
+import type { Draft, Step } from "@/lib/draft"
+import { GUEST_PNG_SIZE, useQrDownload } from "@/components/qr/download-buttons"
 import { cn } from "@/lib/utils"
-
-type Step = 1 | 2 | 3
 
 const STEPS: Array<{ step: Step; label: string }> = [
     { step: 1, label: "Choisissez le type" },
@@ -50,20 +64,45 @@ type Values = {
     password: string
 }
 
-function allContents(existing?: QRCode): Contents {
+function allContents(existing?: QRCode, draft?: Draft | null): Contents {
     const contents = Object.fromEntries(KINDS.map((kind) => [kind, emptyContent(kind)])) as Contents
     if (existing) Object.assign(contents, { [existing.kind]: readContent(existing.kind, existing.content) })
+    if (draft) {
+        for (const kind of KINDS) {
+            if (kind in draft.content) Object.assign(contents, { [kind]: readContent(kind, draft.content[kind]) })
+        }
+    }
     return contents
 }
 
-/** The three-step editor: creates a code, or changes what an existing one leads to without reprinting it. */
-export function QrEditor({ existing }: { existing?: QRCode }) {
+export type EditorMode = "create" | "edit" | "guest"
+
+type Props = {
+    mode: EditorMode
+    existing?: QRCode
+    /** The step and kind live in the URL (?etape=, ?type=): reloading or coming back lands on the same screen. */
+    step: Step | undefined
+    kindHint?: Kind
+    onRoute: (next: { step: Step; kind?: Kind }) => void
+}
+
+/**
+ * The three-step editor: creates a code, changes what an existing one leads to without reprinting it, or (guest)
+ * makes a static code without an account. The draft survives leaving the page (sessionStorage).
+ */
+export function QrEditor({ mode, existing, step: requestedStep, kindHint, onRoute }: Props) {
     const navigate = useNavigate()
     const queryClient = useQueryClient()
-    const editing = Boolean(existing)
-    const [step, setStep] = useState<Step>(editing ? 2 : 1)
-    const [design, setDesign] = useState<Design>(() => readDesign(existing?.design))
-    const [mode, setMode] = useState<PreviewMode>("preview")
+    const editing = mode === "edit"
+    const guest = mode === "guest"
+    const key = draftKey(guest ? "guest" : existing ? `edit:${existing.id}` : "new")
+    // An edit draft only applies to the version of the code it was started from.
+    const [draft] = useState(() => {
+        const found = loadDraft(key)
+        return found && (!existing || found.stamp === existing.updated_at) ? found : null
+    })
+    const [design, setDesign] = useState<Design>(() => draft?.design ?? readDesign(existing?.design))
+    const [previewMode, setMode] = useState<PreviewMode>(requestedStep === 3 ? "qr" : "preview")
 
     const save = useMutation({
         mutationFn: async (values: Values) => {
@@ -81,6 +120,7 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
         },
         onSuccess: (saved) => {
             if (!isQr(saved)) return
+            clearDraft(key)
             void queryClient.invalidateQueries({ queryKey: ["qrcodes"] })
             void queryClient.invalidateQueries({ queryKey: ["stats"] })
             toast.success(
@@ -90,23 +130,26 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
         },
         onError: (error) => {
             // A field the API refused: send the person back to the step that holds it.
-            if (error instanceof ApiError && error.field?.startsWith("content")) setStep(2)
+            if (error instanceof ApiError && error.field?.startsWith("content")) go(2)
         },
     })
 
     const defaultValues: Values = {
-        kind: existing?.kind ?? "",
-        name: existing?.name ?? "",
-        content: allContents(existing),
-        protect: existing?.protected ?? false,
+        kind: draft?.kind || existing?.kind || kindHint || "",
+        name: draft?.name ?? existing?.name ?? "",
+        content: allContents(existing, draft),
+        protect: !guest && (draft?.protect ?? existing?.protected ?? false),
         password: "",
     }
     const form = useAppForm({
         defaultValues,
         onSubmit: async ({ value }) => {
             if (step === 2 && !editing) {
-                setStep(3)
-                setMode("qr")
+                go(3)
+                return
+            }
+            if (guest) {
+                await download.mutateAsync({ format: "png", size: GUEST_PNG_SIZE }).catch(() => undefined)
                 return
             }
             await save.mutateAsync(value).catch(() => undefined)
@@ -115,13 +158,35 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
 
     const values = useStore(form.store, (state) => state.values)
     const kind = values.kind || null
-    const payload = kind ? qrPayload(kind, values.content[kind], shortLink(existing?.slug ?? "xxxxxxx")) : ""
+    const step = effectiveStep(requestedStep, values.kind, editing ? 2 : 1)
+    const payload = !kind
+        ? ""
+        : guest
+          ? staticPayload(kind, values.content[kind])
+          : qrPayload(kind, values.content[kind], shortLink(existing?.slug ?? "xxxxxxx"))
+    const download = useQrDownload({ design, data: payload, name: values.name || "qr-code" })
+
+    // Every change is kept for the tab: leaving the page and coming back resumes the same code (never a password).
+    useEffect(() => {
+        saveDraft(key, {
+            kind: values.kind,
+            name: values.name,
+            content: values.content,
+            protect: values.protect,
+            design,
+            stamp: existing?.updated_at ?? "",
+        })
+    }, [key, values.kind, values.name, values.content, values.protect, design, existing?.updated_at])
+
+    function go(next: Step, nextKind?: Kind) {
+        setMode(next === 3 ? "qr" : "preview")
+        onRoute({ step: next, kind: nextKind ?? kind ?? undefined })
+    }
 
     const chooseKind = (next: Kind) => {
         form.setFieldValue("kind", next)
         if (!isDynamic(next)) form.setFieldValue("protect", false)
-        setStep(2)
-        setMode("preview")
+        go(2, next)
     }
 
     const canVisit = (target: Step) => {
@@ -148,7 +213,14 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
                               : "Personnalisez l'aspect"}
                     </h1>
 
-                    {step === 1 ? <KindPicker current={kind} lockedToDynamic={editing} onPick={chooseKind} /> : null}
+                    {step === 1 ? (
+                        <KindPicker
+                            current={kind}
+                            kinds={guest ? GUEST_KINDS : editing ? KINDS.filter(isDynamic) : KINDS}
+                            hints={guest ? GUEST_HINTS : undefined}
+                            onPick={chooseKind}
+                        />
+                    ) : null}
 
                     {step === 2 && kind ? (
                         <Accordion type="multiple" defaultValue={["content", "name"]} className="grid gap-4">
@@ -157,14 +229,16 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
                                 icon={KIND_ICONS[kind]}
                                 title={KIND_LABELS[kind].title}
                                 description={
-                                    isDynamic(kind)
-                                        ? "Ce contenu reste modifiable après impression."
-                                        : "Un code Wi-Fi est statique : le réseau est inscrit dans le motif, il n'est ni modifiable ni comptabilisé."
+                                    guest
+                                        ? "Sans compte, ce contenu est inscrit dans le code : il ne pourra plus être modifié ni suivi."
+                                        : isDynamic(kind)
+                                          ? "Ce contenu reste modifiable après impression."
+                                          : "Un code Wi-Fi est statique : le réseau est inscrit dans le motif, il n'est ni modifiable ni comptabilisé."
                                 }
                             >
                                 <ContentFields form={form} kind={kind} />
                             </EditorSection>
-                            {kind === "url" ? (
+                            {kind === "url" && !guest ? (
                                 <EditorSection
                                     value="utm"
                                     icon={MegaphoneIcon}
@@ -214,7 +288,11 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
                                 value="name"
                                 icon={PencilIcon}
                                 title="Nom du QR code"
-                                description="Pour le retrouver dans votre liste (facultatif)"
+                                description={
+                                    guest
+                                        ? "Sert de nom au fichier téléchargé (facultatif)"
+                                        : "Pour le retrouver dans votre liste (facultatif)"
+                                }
                             >
                                 <form.AppField
                                     name="name"
@@ -236,9 +314,9 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
                     ) : null}
 
                     {step === 3 && kind ? (
-                        <Accordion type="multiple" defaultValue={["frame"]} className="grid gap-4">
-                            <DesignSections design={design} onChange={setDesign} />
-                            {isDynamic(kind) ? (
+                        <Accordion type="multiple" defaultValue={[guest ? "pattern" : "frame"]} className="grid gap-4">
+                            <DesignSections design={design} onChange={setDesign} limited={guest} />
+                            {isDynamic(kind) && !guest ? (
                                 <EditorSection
                                     value="password"
                                     icon={LockIcon}
@@ -259,13 +337,14 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
                 </div>
 
                 <aside aria-label="Aperçu" className="lg:sticky lg:top-6 lg:self-start">
+                    {guest && step === 3 ? <GuestUpsell /> : null}
                     <PhonePreview
                         kind={kind}
                         content={kind ? values.content[kind] : null}
                         name={values.name}
                         design={design}
                         payload={payload}
-                        mode={mode}
+                        mode={previewMode}
                         onModeChange={setMode}
                         locked={values.protect}
                     />
@@ -284,9 +363,9 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
                     variant="ghost"
                     className="min-h-11"
                     onClick={() => {
-                        if (step > 1 && !(editing && step === 2)) setStep((step - 1) as Step)
+                        if (step > 1 && !(editing && step === 2)) go((step - 1) as Step)
                         else if (existing) void navigate({ to: "/qr-codes/$id", params: { id: existing.id } })
-                        else void navigate({ to: "/qr-codes" })
+                        else void navigate({ to: guest ? "/" : "/qr-codes" })
                     }}
                 >
                     <ArrowLeftIcon aria-hidden />
@@ -306,10 +385,7 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
                                         type="button"
                                         disabled={!canVisit(item.step) || current}
                                         aria-current={current ? "step" : undefined}
-                                        onClick={() => {
-                                            setStep(item.step)
-                                            setMode(item.step === 3 ? "qr" : "preview")
-                                        }}
+                                        onClick={() => go(item.step)}
                                         className={cn(
                                             "flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm disabled:cursor-default",
                                             current
@@ -338,11 +414,21 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
                 {step === 1 ? (
                     <span className="ml-auto md:ml-0 md:w-40" />
                 ) : (
-                    <Button type="submit" className="ml-auto min-h-11 min-w-40 md:ml-0" disabled={save.isPending}>
-                        {save.isPending ? <Loader2Icon className="animate-spin" aria-hidden /> : null}
+                    <Button
+                        type="submit"
+                        className="ml-auto min-h-11 min-w-40 md:ml-0"
+                        disabled={save.isPending || download.isPending}
+                    >
+                        {save.isPending || download.isPending ? (
+                            <Loader2Icon className="animate-spin" aria-hidden />
+                        ) : null}
                         {step === 2 && !editing ? (
                             <>
                                 Suivant <ArrowRightIcon aria-hidden />
+                            </>
+                        ) : guest ? (
+                            <>
+                                <DownloadIcon aria-hidden /> Télécharger (PNG {GUEST_PNG_SIZE} px)
                             </>
                         ) : editing ? (
                             "Enregistrer"
@@ -358,16 +444,18 @@ export function QrEditor({ existing }: { existing?: QRCode }) {
 
 function KindPicker({
     current,
-    lockedToDynamic,
+    kinds,
+    hints,
     onPick,
 }: {
     current: Kind | null
-    lockedToDynamic: boolean
+    kinds: ReadonlyArray<Kind>
+    hints?: Partial<Record<Kind, string>>
     onPick: (kind: Kind) => void
 }) {
     return (
         <div className="grid gap-4 md:grid-cols-2">
-            {KINDS.filter((kind) => !lockedToDynamic || isDynamic(kind)).map((kind) => (
+            {kinds.map((kind) => (
                 <button
                     key={kind}
                     type="button"
@@ -381,7 +469,7 @@ function KindPicker({
                     <KindIcon kind={kind} className="size-12" />
                     <span className="grid gap-1">
                         <span className="font-heading text-lg font-semibold">{KIND_LABELS[kind].title}</span>
-                        <span className="text-muted-foreground text-sm">{KIND_LABELS[kind].hint}</span>
+                        <span className="text-muted-foreground text-sm">{hints?.[kind] ?? KIND_LABELS[kind].hint}</span>
                     </span>
                     {kind === "url" ? (
                         <Badge className="absolute -top-2.5 right-4 text-[10px] uppercase">Le plus utilisé</Badge>
@@ -630,5 +718,24 @@ function PasswordFields({ form, alreadyProtected }: { form: EditorForm; alreadyP
                 </div>
             )}
         </form.Subscribe>
+    )
+}
+
+/** What an account adds, shown where a guest feels the limit: next to the download. */
+function GuestUpsell() {
+    return (
+        <div className="bg-accent text-accent-foreground mb-5 grid gap-2 rounded-xl p-4 text-sm">
+            <p className="flex items-center gap-2 font-semibold">
+                <SparklesIcon className="size-4" aria-hidden="true" />
+                Avec un compte gratuit
+            </p>
+            <p>
+                Destination modifiable après impression, statistiques de scans, logo, cadres « Scannez-moi » et export
+                PNG 4096 px ou SVG.
+            </p>
+            <Link to="/inscription" className="font-semibold underline">
+                Créer un compte
+            </Link>
+        </div>
     )
 }

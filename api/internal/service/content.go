@@ -226,7 +226,7 @@ func NormalizeDesign(raw json.RawMessage) (json.RawMessage, error) {
 		return json.RawMessage(`{}`), nil
 	}
 	if len(raw) > MaxDesignBytes {
-		return nil, invalid("design", "Le design est trop lourd (logo de 300 Ko au maximum).")
+		return nil, invalid("design", "Le design est trop lourd : utilisez un logo plus léger.")
 	}
 	var object map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &object); err != nil {
@@ -235,7 +235,8 @@ func NormalizeDesign(raw json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(object)
 }
 
-const MaxDesignBytes = 400 * 1024
+// A 1024 px WebP logo, base64 encoded, fits with room to spare.
+const MaxDesignBytes = 1536 * 1024
 
 func NormalizeName(name, kind string) (string, error) {
 	name = strings.TrimSpace(name)

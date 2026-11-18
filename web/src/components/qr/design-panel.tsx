@@ -119,51 +119,54 @@ function FrameSample({ style }: { style: Design["frame"]["style"] }) {
     )
 }
 
-export function DesignSections({ design, onChange }: Props) {
+/** `limited` (no account): pattern, colours and corners only; frames and logos come with an account. */
+export function DesignSections({ design, onChange, limited = false }: Props & { limited?: boolean }) {
     const set = <TKey extends keyof Design>(key: TKey, value: Partial<Design[TKey]>) =>
         onChange({ ...design, [key]: { ...design[key], ...value } })
     const frameTextId = useId()
 
     return (
         <>
-            <EditorSection
-                value="frame"
-                icon={ScanIcon}
-                title="Cadre du QR code"
-                description="Un cadre avec un appel à l'action attire plus de scans"
-            >
-                <ChoiceGrid
-                    label="Style du cadre"
-                    value={design.frame.style}
-                    onChange={(style) => set("frame", { style })}
-                    options={[
-                        { value: "none", label: "Pas de cadre", render: <FrameSample style="none" /> },
-                        { value: "label", label: "Texte sous le code", render: <FrameSample style="label" /> },
-                        { value: "box", label: "Encadré avec bandeau", render: <FrameSample style="box" /> },
-                        { value: "badge", label: "Badge plein", render: <FrameSample style="badge" /> },
-                        { value: "speech", label: "Bulle au-dessus", render: <FrameSample style="speech" /> },
-                    ]}
-                />
-                {design.frame.style !== "none" ? (
-                    <div className="bg-muted/60 grid gap-4 rounded-xl p-4 sm:grid-cols-2 sm:p-5">
-                        <div className="grid gap-2">
-                            <Label htmlFor={frameTextId}>Texte du cadre</Label>
-                            <Input
-                                id={frameTextId}
-                                className="h-11"
-                                maxLength={24}
-                                value={design.frame.text}
-                                onChange={(event) => set("frame", { text: event.target.value })}
+            {limited ? null : (
+                <EditorSection
+                    value="frame"
+                    icon={ScanIcon}
+                    title="Cadre du QR code"
+                    description="Un cadre avec un appel à l'action attire plus de scans"
+                >
+                    <ChoiceGrid
+                        label="Style du cadre"
+                        value={design.frame.style}
+                        onChange={(style) => set("frame", { style })}
+                        options={[
+                            { value: "none", label: "Pas de cadre", render: <FrameSample style="none" /> },
+                            { value: "label", label: "Texte sous le code", render: <FrameSample style="label" /> },
+                            { value: "box", label: "Encadré avec bandeau", render: <FrameSample style="box" /> },
+                            { value: "badge", label: "Badge plein", render: <FrameSample style="badge" /> },
+                            { value: "speech", label: "Bulle au-dessus", render: <FrameSample style="speech" /> },
+                        ]}
+                    />
+                    {design.frame.style !== "none" ? (
+                        <div className="bg-muted/60 grid gap-4 rounded-xl p-4 sm:grid-cols-2 sm:p-5">
+                            <div className="grid gap-2">
+                                <Label htmlFor={frameTextId}>Texte du cadre</Label>
+                                <Input
+                                    id={frameTextId}
+                                    className="h-11"
+                                    maxLength={24}
+                                    value={design.frame.text}
+                                    onChange={(event) => set("frame", { text: event.target.value })}
+                                />
+                            </div>
+                            <ColorField
+                                label="Couleur du cadre"
+                                value={design.frame.color}
+                                onChange={(color) => set("frame", { color })}
                             />
                         </div>
-                        <ColorField
-                            label="Couleur du cadre"
-                            value={design.frame.color}
-                            onChange={(color) => set("frame", { color })}
-                        />
-                    </div>
-                ) : null}
-            </EditorSection>
+                    ) : null}
+                </EditorSection>
+            )}
 
             <EditorSection
                 value="pattern"
@@ -276,14 +279,16 @@ export function DesignSections({ design, onChange }: Props) {
                 </div>
             </EditorSection>
 
-            <EditorSection
-                value="logo"
-                icon={ImagePlusIcon}
-                title="Ajoutez un logo"
-                description="Un logo ou une image au centre du code"
-            >
-                <LogoPicker design={design} onChange={onChange} />
-            </EditorSection>
+            {limited ? null : (
+                <EditorSection
+                    value="logo"
+                    icon={ImagePlusIcon}
+                    title="Ajoutez un logo"
+                    description="Un logo ou une image au centre du code"
+                >
+                    <LogoPicker design={design} onChange={onChange} />
+                </EditorSection>
+            )}
         </>
     )
 }

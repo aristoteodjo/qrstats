@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest"
 
-import { actionHref, qrPayload, readContent, readDesign, summary, vcardText, wifiPayload } from "@/lib/qr"
+import {
+    actionHref,
+    isGuestKind,
+    qrPayload,
+    readContent,
+    readDesign,
+    staticPayload,
+    summary,
+    vcardText,
+    wifiPayload,
+} from "@/lib/qr"
 
 describe("payloads", () => {
     it("escapes Wi-Fi special characters", () => {
@@ -47,6 +57,20 @@ describe("payloads", () => {
         expect(actionHref("phone", { phone: "+229 97-00" })).toBe("tel:+2299700")
         expect(actionHref("sms", { phone: "+229", message: "Oui !" })).toBe("sms:+229?body=Oui%20!")
         expect(actionHref("url", { url: "x" })).toBeNull()
+    })
+})
+
+describe("static payloads", () => {
+    it("writes the content itself into the code", () => {
+        expect(staticPayload("url", { url: "example.com/menu" })).toBe("https://example.com/menu")
+        expect(staticPayload("url", { url: "http://a.example" })).toBe("http://a.example")
+        expect(staticPayload("text", { text: "Bonjour" })).toBe("Bonjour")
+        expect(staticPayload("phone", { phone: "+229 97 00" })).toBe("tel:+2299700")
+        expect(staticPayload("email", { to: "a@b.co" })).toBe("mailto:a@b.co")
+        expect(staticPayload("sms", { phone: "+229 97", message: "Oui" })).toBe("SMSTO:+22997:Oui")
+        expect(staticPayload("wifi", { ssid: "x", encryption: "nopass" })).toBe("WIFI:T:nopass;S:x;;")
+        expect(isGuestKind("vcard")).toBe(false)
+        expect(isGuestKind("url")).toBe(true)
     })
 })
 

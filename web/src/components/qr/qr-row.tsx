@@ -15,7 +15,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { useQrDownload } from "@/components/qr/download-buttons"
+import { ExportMenuItems, useQrDownload } from "@/components/qr/download-buttons"
 import { QrImage } from "@/components/qr/qr-image"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -209,13 +209,8 @@ export function QrRow({ qr, selected, onSelect, onRename, onToggle, onDelete, to
                                 <DownloadIcon />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => download.mutate("png")}>
-                                PNG (impression, écrans)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => download.mutate("svg")}>
-                                SVG (graphistes)
-                            </DropdownMenuItem>
+                        <DropdownMenuContent align="end" className="min-w-60">
+                            <ExportMenuItems onExport={(target) => download.mutate(target)} />
                         </DropdownMenuContent>
                     </DropdownMenu>
                     <DropdownMenu>

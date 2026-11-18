@@ -6,12 +6,18 @@ export function stylingOptions(design: Design, data: string, logo: string | null
         type: "svg" as const,
         width: size,
         height: size,
-        margin: 8,
+        // Quiet zone around the pattern: scanners need it, especially once printed close to other ink.
+        margin: Math.round(size * 0.05),
         data,
         image: logo ?? undefined,
         // A logo hides modules: the highest correction level keeps the code readable.
         qrOptions: { errorCorrectionLevel: logo ? ("H" as const) : ("Q" as const) },
-        imageOptions: { hideBackgroundDots: true, imageSize: design.logo.size, margin: 6, crossOrigin: "anonymous" },
+        imageOptions: {
+            hideBackgroundDots: true,
+            imageSize: design.logo.size,
+            margin: Math.round(size * 0.01),
+            crossOrigin: "anonymous",
+        },
         dotsOptions: { type: design.dots.style, color: design.dots.color },
         backgroundOptions: { color: design.background.transparent ? "transparent" : design.background.color },
         cornersSquareOptions:
@@ -31,15 +37,34 @@ const escapeXml = (value: string) =>
 export const svgDataUrl = (svg: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 
 /**
+ * Places an SVG document inside another as a nested <svg>, so the QR stays vector at any export size. An <image> of
+ * a data URL would be rasterized at its own size by some browsers (Safari), and come out blurry once enlarged.
+ */
+export function nestSvg(svg: string, x: number, y: number, size: number): string {
+    const body = svg.replace(/<\?xml[^>]*\?>/, "").trim()
+    const open = body.match(/^<svg\b[^>]*>/)
+    if (!open) return ""
+    const tag = open[0]
+    const width = Number(tag.match(/\swidth="([\d.]+)"/)?.[1] ?? size)
+    const height = Number(tag.match(/\sheight="([\d.]+)"/)?.[1] ?? size)
+    const viewBox = tag.match(/\sviewBox="[^"]*"/)?.[0] ?? ` viewBox="0 0 ${width} ${height}"`
+    const attributes = tag
+        .replace(/^<svg/, "")
+        .replace(/>$/, "")
+        .replace(/\s(width|height|x|y|viewBox)="[^"]*"/g, "")
+    return `<svg${attributes}${viewBox} x="${x}" y="${y}" width="${size}" height="${size}">${body.slice(tag.length)}`
+}
+
+/**
  * Wraps the QR (an SVG document) in its frame. The QR keeps its own size; the frame adds room around it.
  * Every frame keeps a quiet zone of background colour around the pattern.
  */
 export function framedSvg(qrSvg: string, design: Design, qrSize: number): string {
     const { style, text, color } = design.frame
     const background = design.background.transparent ? "none" : design.background.color
-    const inner = `<image href="${svgDataUrl(qrSvg)}" width="${qrSize}" height="${qrSize}"`
+    const inner = (x: number, y: number) => nestSvg(qrSvg, x, y, qrSize)
     if (style === "none") {
-        return `<svg xmlns="http://www.w3.org/2000/svg" width="${qrSize}" height="${qrSize}" viewBox="0 0 ${qrSize} ${qrSize}">${inner} x="0" y="0"/></svg>`
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="${qrSize}" height="${qrSize}" viewBox="0 0 ${qrSize} ${qrSize}">${inner(0, 0)}</svg>`
     }
     const pad = Math.round(qrSize * 0.06)
     const band = Math.round(qrSize * 0.2)
@@ -52,32 +77,52 @@ export function framedSvg(qrSvg: string, design: Design, qrSize: number): string
     switch (style) {
         case "label": {
             const height = qrSize + pad * 2 + band
-            return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}" fill="${background === "none" ? "#ffffff" : background}"/>${inner} x="${pad}" y="${pad}"/>${textOn(color, qrSize + pad + band / 2)}</svg>`
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}" fill="${background === "none" ? "#ffffff" : background}"/>${inner(pad, pad)}${textOn(color, qrSize + pad + band / 2)}</svg>`
         }
         case "box": {
             const stroke = Math.round(pad * 0.45)
             const height = qrSize + pad * 2 + band
-            return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect x="${stroke / 2}" y="${stroke / 2}" width="${width - stroke}" height="${height - stroke}" rx="${pad}" fill="#ffffff" stroke="${color}" stroke-width="${stroke}"/>${inner} x="${pad}" y="${pad}"/><rect x="${stroke / 2}" y="${qrSize + pad * 1.5}" width="${width - stroke}" height="${band + pad / 2 - stroke / 2}" fill="${color}"/>${textOn("#ffffff", qrSize + pad * 1.5 + band / 2)}</svg>`
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect x="${stroke / 2}" y="${stroke / 2}" width="${width - stroke}" height="${height - stroke}" rx="${pad}" fill="#ffffff" stroke="${color}" stroke-width="${stroke}"/>${inner(pad, pad)}<rect x="${stroke / 2}" y="${qrSize + pad * 1.5}" width="${width - stroke}" height="${band + pad / 2 - stroke / 2}" fill="${color}"/>${textOn("#ffffff", qrSize + pad * 1.5 + band / 2)}</svg>`
         }
         case "badge": {
             const height = qrSize + pad * 3 + band
-            return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}" rx="${pad * 1.5}" fill="${color}"/><rect x="${pad / 2}" y="${pad / 2}" width="${width - pad}" height="${qrSize + pad}" rx="${pad}" fill="#ffffff"/>${inner} x="${pad}" y="${pad}"/>${textOn("#ffffff", qrSize + pad * 2 + band / 2)}</svg>`
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}" rx="${pad * 1.5}" fill="${color}"/><rect x="${pad / 2}" y="${pad / 2}" width="${width - pad}" height="${qrSize + pad}" rx="${pad}" fill="#ffffff"/>${inner(pad, pad)}${textOn("#ffffff", qrSize + pad * 2 + band / 2)}</svg>`
         }
         case "speech": {
             const tail = Math.round(band * 0.4)
             const top = band + tail
             const height = top + qrSize + pad * 2
             const mid = width / 2
-            return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect x="0" y="0" width="${width}" height="${band}" rx="${band / 2}" fill="${color}"/><path d="M${mid - tail} ${band - 1} L${mid} ${band + tail} L${mid + tail} ${band - 1} Z" fill="${color}"/>${textOn("#ffffff", band / 2)}<rect x="0" y="${top}" width="${width}" height="${qrSize + pad * 2}" rx="${pad}" fill="${background === "none" ? "#ffffff" : background}"/>${inner} x="${pad}" y="${top + pad}"/></svg>`
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect x="0" y="0" width="${width}" height="${band}" rx="${band / 2}" fill="${color}"/><path d="M${mid - tail} ${band - 1} L${mid} ${band + tail} L${mid + tail} ${band - 1} Z" fill="${color}"/>${textOn("#ffffff", band / 2)}<rect x="0" y="${top}" width="${width}" height="${qrSize + pad * 2}" rx="${pad}" fill="${background === "none" ? "#ffffff" : background}"/>${inner(pad, top + pad)}</svg>`
         }
     }
 }
 
+/**
+ * Gives an SVG document its export width (height in proportion), so the browser draws the vector at full
+ * resolution instead of scaling up a small bitmap.
+ */
+export function resizeSvg(svg: string, width: number): string {
+    const open = svg.match(/^<svg\b[^>]*>/)
+    if (!open) return svg
+    const tag = open[0]
+    const ownWidth = Number(tag.match(/\swidth="([\d.]+)"/)?.[1] ?? 0)
+    const ownHeight = Number(tag.match(/\sheight="([\d.]+)"/)?.[1] ?? 0)
+    if (!ownWidth || !ownHeight) return svg
+    const height = Math.round((ownHeight / ownWidth) * width)
+    const viewBox = /\sviewBox="/.test(tag) ? "" : ` viewBox="0 0 ${ownWidth} ${ownHeight}"`
+    const resized = tag
+        .replace(/\swidth="[\d.]+"/, ` width="${width}"`)
+        .replace(/\sheight="[\d.]+"/, ` height="${height}"${viewBox}`)
+    return resized + svg.slice(tag.length)
+}
+
 /** Rasterizes an SVG document to a PNG blob at `width` pixels wide. */
 export async function svgToPng(svg: string, width: number): Promise<Blob> {
+    const sized = resizeSvg(svg, width)
     const image = new Image()
     image.decoding = "async"
-    image.src = svgDataUrl(svg)
+    image.src = svgDataUrl(sized)
     await image.decode()
     const ratio = image.naturalHeight / image.naturalWidth || 1
     const canvas = document.createElement("canvas")
@@ -85,6 +130,8 @@ export async function svgToPng(svg: string, width: number): Promise<Blob> {
     canvas.height = Math.round(width * ratio)
     const context = canvas.getContext("2d")
     if (!context) throw new Error("Canvas indisponible.")
+    context.imageSmoothingEnabled = true
+    context.imageSmoothingQuality = "high"
     context.drawImage(image, 0, 0, canvas.width, canvas.height)
     return new Promise((resolve, reject) =>
         canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Export impossible."))), "image/png"),

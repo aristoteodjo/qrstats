@@ -2,6 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router"
 import { ArrowDownIcon, BarChart3Icon, LockIcon, PaletteIcon, PauseIcon, RefreshCwIcon } from "lucide-react"
 
 import { QrImage } from "@/components/qr/qr-image"
+import { PlanComparison } from "@/components/site/plan-comparison"
 import { SiteLayout } from "@/components/site/site-layout"
 import { Button } from "@/components/ui/button"
 import { defaultDesign } from "@/lib/qr"
@@ -93,7 +94,7 @@ function Landing() {
                             <Link to="/inscription">Créer mon premier QR code</Link>
                         </Button>
                         <Button asChild size="lg" variant="outline" className="h-13 rounded-xl px-7 text-base">
-                            <Link to="/connexion">Se connecter</Link>
+                            <Link to="/creer">Essayer sans compte</Link>
                         </Button>
                     </div>
                 </div>
@@ -117,6 +118,11 @@ function Landing() {
                     </dl>
                 </div>
             </section>
+            <div className="border-t">
+                <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6">
+                    <PlanComparison />
+                </div>
+            </div>
         </SiteLayout>
     )
 }

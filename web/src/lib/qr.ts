@@ -221,6 +221,43 @@ export function readDesign(raw: unknown): Design {
     return designSchema.parse(raw ?? {})
 }
 
+/** Kinds open without an account: the content is written into the pattern itself (static, neither editable nor tracked). */
+export const GUEST_KINDS = ["url", "text", "wifi", "email", "phone"] as const satisfies ReadonlyArray<Kind>
+export type GuestKind = (typeof GUEST_KINDS)[number]
+export const isGuestKind = (kind: Kind): kind is GuestKind => (GUEST_KINDS as ReadonlyArray<Kind>).includes(kind)
+
+/** Descriptions true for a static code: no page, nothing to change later. */
+export const GUEST_HINTS: Record<GuestKind, string> = {
+    url: "Ouvre une adresse web (fixée une fois pour toutes)",
+    text: "Affiche le texte directement sur le téléphone",
+    wifi: "Connecte au réseau sans saisie",
+    email: "Ouvre un e-mail prérempli",
+    phone: "Lance un appel vers un numéro",
+}
+
+/** The content itself, as phone cameras read it: what a static code (no account) encodes. */
+export function staticPayload(kind: Kind, raw: unknown): string {
+    switch (kind) {
+        case "url": {
+            const url = readContent("url", raw).url.trim()
+            return url && !url.includes("://") ? `https://${url}` : url
+        }
+        case "text":
+            return readContent("text", raw).text
+        case "wifi":
+            return wifiPayload(readContent("wifi", raw))
+        case "vcard":
+            return vcardText(readContent("vcard", raw))
+        case "sms": {
+            const c = readContent("sms", raw)
+            return `SMSTO:${c.phone.replace(/[^\d+]/g, "")}:${c.message}`
+        }
+        case "email":
+        case "phone":
+            return actionHref(kind, raw) ?? ""
+    }
+}
+
 /** What the printed pattern encodes: the short redirect for every dynamic kind, the network itself for Wi-Fi. */
 export function qrPayload(kind: Kind, content: unknown, link: string): string {
     return kind === "wifi" ? wifiPayload(readContent("wifi", content)) : link

@@ -86,7 +86,18 @@ Vise WCAG 2.2 AA : `eslint-plugin-jsx-a11y` strict bloquant, lien « Aller au co
 
 ## Déploiement
 
-Vercel, deux projets : `web/` (TanStack Start, Nitro) et `api/` (fonction Go `api/api/index.go`, toutes les routes réécrites vers elle par `api/vercel.json`, `TRUST_PROXY_HEADERS=true`, `MIGRATE_ON_START=false`). Base Postgres managée. Variables documentées dans `web/.env.example` et `api/.env.example`.
+Vercel, équipe `riri122s-projects`, deux projets déployés en CLI depuis leur dossier (`cd api && vercel deploy --prod`, idem `web`) :
+
+| Projet | Dossier | URL |
+| --- | --- | --- |
+| `qrstats-api` | `api/` | https://qrstats-api.vercel.app (fonction Go `api/api/index.go`, tout réécrit vers elle par `api/vercel.json`) |
+| `qrstats-web` | `web/` | https://qrstats-web.vercel.app (TanStack Start, preset Nitro Vercel, Node 22) |
+
+- La fonction Go est compilée **hors du module** : elle n'importe que `qrstats/app` (`app.FromEnv`), jamais `internal/`.
+- Variables de production posées dans chaque projet (voir les `.env.example`) ; secrets générés, jamais affichés. `MAINTENANCE_SECRET` du web dans `account.md` (non versionné).
+- `DATABASE_URL` : base Postgres fournie par le porteur du projet, à ajouter dans **les deux** projets (le web lit `AUTH_DATABASE_URL` puis `DATABASE_URL`).
+- Migrations : `MIGRATE_ON_START=true` pour l'instant (AutoMigrate idempotent à chaque démarrage à froid, à passer à `false` une fois le schéma stable) ; tables Better Auth par `POST https://qrstats-web.vercel.app/api/maintenance/auth-migrate` avec `Authorization: Bearer $MAINTENANCE_SECRET`.
+- Dépôt : https://github.com/aristoteodjo/qrstats (public). Pas encore relié à Vercel pour les déploiements automatiques (il faudrait régler le Root Directory de chaque projet sur `api` / `web`).
 
 ## Ordre de construction
 
@@ -110,7 +121,7 @@ Vercel, deux projets : `web/` (TanStack Start, Nitro) et `api/` (fonction Go `ap
 
 ### Ouvertes (ne pas trancher à la place du porteur du projet)
 - Nom de domaine et domaine court des QR codes (le domaine court est figé dans chaque code imprimé : à choisir avant la première impression réelle).
-- Valider le runtime Go de Vercel (version 1.26, réécriture de chemins) ; sinon héberger l'API ailleurs (Railway, Fly, Coolify).
+- Runtime Go de Vercel validé pour la compilation (2026-11-18) ; à surveiller : démarrage à froid et durée des migrations.
 - Géolocalisation hors Vercel/Cloudflare (base GeoLite locale ?).
 - Durée de conservation des scans (à inscrire dans la politique de confidentialité).
 - Inscriptions ouvertes à tous ou sur invitation ; vérification de l'e-mail ; mot de passe oublié (fournisseur d'e-mail).

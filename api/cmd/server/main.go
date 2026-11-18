@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"qrstats/internal/app"
+	"qrstats/app"
 	"qrstats/internal/config"
 	"qrstats/internal/platform/logger"
 )

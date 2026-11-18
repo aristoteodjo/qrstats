@@ -214,6 +214,14 @@ export const designSchema = z.object({
             color: hex.catch("#000000"),
         })
         .catch({ style: "none", text: "Scannez-moi !", color: "#000000" }),
+    // An AI artwork that already encodes the code's short link: it replaces the drawn pattern entirely.
+    art: z
+        .object({
+            image: z.string().regex(/^data:image\/(png|jpeg|webp);base64,/),
+            prompt: z.string().max(400).catch(""),
+        })
+        .nullable()
+        .catch(null),
 })
 
 export type Design = z.infer<typeof designSchema>

@@ -68,6 +68,9 @@ WhatsApp, Instagram, Facebook, TikTok, YouTube, LinkedIn, Avis Google (`lib/soci
 ### Lisibilité
 Chaque code est décodé dans le navigateur (jsQR, à 200 et 400 px) tel qu'il sera téléchargé, et le contraste encre/fond est mesuré (`lib/scan-check.ts`) : sous 2,5:1 il est déclaré illisible même si le décodeur le lit (une image parfaite n'est pas un papier sous une lampe), sous 4:1 fragile. Badge dans l'éditeur (étape 3) et sur la fiche.
 
+### Visuel IA (QR art)
+Réservé aux comptes et aux codes dynamiques déjà enregistrés : l'image encode le lien court du code (`SHORT_URL/r/<slug>`), calculé par l'API, jamais un texte venu du navigateur. Fournisseur Replicate, modèle `andreasjansson/illusion` (SD 1.5 + ControlNet QR Monster, version figée par `REPLICATE_ART_VERSION`). `POST /api/v1/qrcodes/:id/art` réserve une place du quota (`ART_DAILY_LIMIT`, 10 par compte sur 24 h glissantes, verrou consultatif par propriétaire) puis lance la prédiction ; le navigateur interroge `GET /api/v1/art/:id` toutes les 3 s. L'API télécharge l'image (hôtes `replicate.delivery` seulement, le jeton ne part nulle part ailleurs) et la renvoie en data URL ; le web la réencode en WebP dans `design.art`, qui remplace le motif (cadres conservés). Un échec rend la place. Sans `REPLICATE_API_TOKEN` la section dit « pas encore activée ». Trois équilibres (`readable` 2.2, `balanced` 1.8, `artistic` 1.4) ; le badge de lisibilité décode l'image, sans mesure de contraste. `REPLICATE_BASE_URL` (développement seulement) pointe vers un faux serveur pour tester sans payer.
+
 ### Apparence
 Le design est un objet JSON opaque pour l'API (≤ 400 Ko, logo inclus), dont le web possède la forme (`designSchema`, lecture tolérante). Rendu `qr-code-styling` + cadres SVG maison (`lib/qr-render.ts`) : le QR est imbriqué en `<svg>` vectoriel (jamais en `<image>`, flou une fois agrandi), marge de silence de 5 %. Export compte : PNG 1024, 2048 ou 4096 px (dessiné à la taille finale), SVG vectoriel et PDF A4 (jsPDF chargé à la demande). Forme carrée ou ronde ; 12 styles prêts à l'emploi (`lib/style-presets.ts`, tous à fort contraste). Logo : 14 marques (simple-icons, CC0), SVG importé gardé vectoriel, ou image ramenée à 1024 px en WebP (design de 1,5 Mo au plus côté API). Correction d'erreur H avec logo, Q sinon.
 
@@ -121,7 +124,7 @@ Vercel, équipe `riri122s-projects`, deux projets déployés en CLI depuis leur 
 3. Suivi des scans et analyses (globales et par code). **Fait (2026-11-18).**
 3b. Liste des QR codes en cartes (miniature, lien court, destination, scans, dates, statut, partage, téléchargement), filtres statut/type, tri, actions groupées, renommage. **Fait (2026-11-18).**
 4. Refonte visuelle (auth, accueil, 404/500, barre latérale) vérifiée dans Chrome headless local (`playwright-core`, parcours inscription → création → liste → analyses). **Fait (2026-11-18).**
-5. Inspiré de qrcode-ai.com (2026-11-18) : vérification de lisibilité, styles prêts à l'emploi, forme ronde, types réseaux sociaux, export PDF, redirection selon le visiteur. **Fait.** Restent : QR art par IA (fournisseur à choisir), QR sur image de fond, génération en lot (CSV), domaine personnalisé, équipes, export CSV des scans.
+5. Inspiré de qrcode-ai.com (2026-11-18) : vérification de lisibilité, styles prêts à l'emploi, forme ronde, types réseaux sociaux, export PDF, redirection selon le visiteur, visuel IA (Replicate). **Fait.** Restent : QR sur image de fond, génération en lot (CSV), domaine personnalisé, équipes, export CSV des scans.
 6. Facturation et limites par offre (si décidé).
 
 ## Décisions
@@ -135,6 +138,7 @@ Vercel, équipe `riri122s-projects`, deux projets déployés en CLI depuis leur 
 - 2026-11-18 : pas de champ téléphone international (phone-input de charlomi non copié) : l'auth est email + mot de passe.
 
 - 2026-11-18 : création sans compte autorisée (codes statiques, types et export limités) pour donner envie de créer un compte.
+- 2026-11-18 : visuels IA par Replicate, réservés aux comptes, 10 par compte et par 24 h (modifiable par `ART_DAILY_LIMIT`).
 - 2026-11-18 : pages légales : éditeur Aristote ODJO, particulier (adresse non publiée), contact public `oaristote@gmail.com`, hébergeur Vercel Inc., base Neon Inc., droit béninois (Code du numérique, loi 2017-20), autorité APDP. Scans conservés tant que le QR code existe (effacés avec lui). Suppression de compte sur demande par e-mail (pas encore de bouton).
 
 ### Ouvertes (ne pas trancher à la place du porteur du projet)

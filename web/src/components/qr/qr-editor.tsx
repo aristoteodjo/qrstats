@@ -377,7 +377,16 @@ export function QrEditor({ mode, existing, step: requestedStep, kindHint, onRout
 
                     {step === 3 && kind ? (
                         <Accordion type="multiple" defaultValue={["presets"]} className="grid gap-4">
-                            <DesignSections design={design} onChange={setDesign} limited={guest} />
+                            <DesignSections
+                                design={design}
+                                onChange={setDesign}
+                                limited={guest}
+                                art={
+                                    guest || !isDynamic(kind)
+                                        ? undefined
+                                        : { codeId: existing && isDynamic(existing.kind) ? existing.id : undefined }
+                                }
+                            />
                             {isDynamic(kind) && !guest ? (
                                 <EditorSection
                                     value="password"

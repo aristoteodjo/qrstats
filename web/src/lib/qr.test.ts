@@ -84,3 +84,14 @@ describe("reading stored data", () => {
         expect(design.frame.style).toBe("none")
     })
 })
+
+describe("design art", () => {
+    it("defaults to none and drops anything that is not an image data URL", () => {
+        expect(readDesign({}).art).toBeNull()
+        expect(readDesign({ art: { image: "https://evil.example/x.png", prompt: "x" } }).art).toBeNull()
+        expect(readDesign({ art: { image: "data:image/webp;base64,AAA", prompt: "forêt" } }).art).toEqual({
+            image: "data:image/webp;base64,AAA",
+            prompt: "forêt",
+        })
+    })
+})

@@ -38,6 +38,16 @@ type Config struct {
 	// ClientIPHeader is the one header the edge overwrites with the caller's address (Vercel: X-Vercel-Forwarded-For,
 	// Cloudflare: CF-Connecting-IP). Any other forwarding header can be set by the caller and is ignored.
 	ClientIPHeader string
+
+	// ShortURL is this API's public address: the one printed in every code (/r/<slug>), encoded in AI artworks.
+	ShortURL string
+
+	// ReplicateToken enables AI artworks; without it the feature answers "unavailable".
+	ReplicateToken   string
+	ReplicateVersion string
+	// ReplicateBaseURL points at a stand-in server, in development only: in production the token goes to Replicate.
+	ReplicateBaseURL string
+	ArtDailyLimit    int
 }
 
 func (c *Config) IsDevelopment() bool {
@@ -66,6 +76,12 @@ func Load() (*Config, error) {
 		VisitorSecret:      os.Getenv("VISITOR_SECRET"),
 		TrustProxyHeaders:  boolOr("TRUST_PROXY_HEADERS", false, &problems),
 		ClientIPHeader:     envOr("CLIENT_IP_HEADER", "X-Vercel-Forwarded-For"),
+		ShortURL:           strings.TrimSuffix(envOr("SHORT_URL", "http://localhost:8110"), "/"),
+		ReplicateToken:     os.Getenv("REPLICATE_API_TOKEN"),
+		// andreasjansson/illusion: Stable Diffusion 1.5 with the QR Code Monster ControlNet.
+		ReplicateVersion: envOr("REPLICATE_ART_VERSION", "75d51a73fce3c00de31ed9ab4358c73e8fc0f627dc8ce975818e653317cb919b"),
+		ReplicateBaseURL: os.Getenv("REPLICATE_BASE_URL"),
+		ArtDailyLimit:    intOr("ART_DAILY_LIMIT", 10, &problems),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -77,6 +93,9 @@ func Load() (*Config, error) {
 		} else {
 			problems = append(problems, errors.New("VISITOR_SECRET must be at least 32 characters"))
 		}
+	}
+	if !cfg.IsDevelopment() {
+		cfg.ReplicateBaseURL = ""
 	}
 	for _, origin := range cfg.CORSAllowedOrigins {
 		if origin == "*" {
@@ -105,6 +124,19 @@ func boolOr(key string, fallback bool, problems *[]error) bool {
 	value, err := strconv.ParseBool(raw)
 	if err != nil {
 		*problems = append(*problems, fmt.Errorf("%s: %q is not a boolean", key, raw))
+		return fallback
+	}
+	return value
+}
+
+func intOr(key string, fallback int, problems *[]error) int {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return fallback
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil || value < 0 {
+		*problems = append(*problems, fmt.Errorf("%s: %q is not a positive integer", key, raw))
 		return fallback
 	}
 	return value

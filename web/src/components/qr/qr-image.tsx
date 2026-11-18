@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { designLogo } from "@/lib/logos"
-import { framedSvg, stylingOptions, svgDataUrl } from "@/lib/qr-render"
+import { artSvg, framedSvg, stylingOptions, svgDataUrl } from "@/lib/qr-render"
 import type { Design } from "@/lib/qr"
 import { cn } from "@/lib/utils"
 
@@ -10,6 +10,7 @@ export const QR_SIZE = 600
 
 /** Renders the styled, framed QR as an SVG document (client only: qr-code-styling draws with the DOM). */
 export async function renderQrSvg(design: Design, data: string): Promise<string> {
+    if (design.art) return framedSvg(artSvg(design.art.image, QR_SIZE), design, QR_SIZE)
     const { default: QRCodeStyling } = await import("qr-code-styling")
     const qr = new QRCodeStyling(stylingOptions(design, data, designLogo(design.logo), QR_SIZE))
     const raw = await qr.getRawData("svg")

@@ -12,6 +12,15 @@ definitions:
         example: content.url
         type: string
     type: object
+  handler.ArtStarted:
+    properties:
+      id:
+        type: string
+      quota:
+        $ref: '#/definitions/service.ArtQuota'
+      status:
+        type: string
+    type: object
   handler.PublicView:
     properties:
       content:
@@ -103,6 +112,41 @@ definitions:
   handler.unlockInput:
     properties:
       password:
+        type: string
+    type: object
+  service.ArtQuota:
+    properties:
+      available:
+        type: boolean
+      limit:
+        type: integer
+      remaining:
+        type: integer
+      used:
+        type: integer
+    type: object
+  service.ArtResult:
+    properties:
+      error:
+        type: string
+      id:
+        type: string
+      image:
+        description: 'Image is a data URL, sent once the artwork is ready: the provider
+          deletes its copy after an hour.'
+        type: string
+      status:
+        type: string
+    type: object
+  service.ArtStartInput:
+    properties:
+      prompt:
+        type: string
+      style:
+        enum:
+        - readable
+        - balanced
+        - artistic
         type: string
     type: object
   service.Bucket:
@@ -214,6 +258,40 @@ info:
   title: qrstats API
   version: "1.0"
 paths:
+  /art/{id}:
+    get:
+      parameters:
+      - description: Artwork id
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/service.ArtResult'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: An artwork's progress, with the image once ready
+      tags:
+      - art
+  /art/quota:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/service.ArtQuota'
+      security:
+      - BearerAuth: []
+      summary: Whether AI artworks are available, and how many are left today
+      tags:
+      - art
   /public/qr/{slug}:
     get:
       parameters:
@@ -396,6 +474,46 @@ paths:
       summary: Change what a QR code leads to, its look, its status or its password
       tags:
       - qrcodes
+  /qrcodes/{id}/art:
+    post:
+      parameters:
+      - description: QR code id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Description and style
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/service.ArtStartInput'
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/handler.ArtStarted'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Start an AI artwork that encodes the code's short link
+      tags:
+      - art
   /r/{slug}:
     get:
       description: A link code goes straight to its target (with UTM parameters);

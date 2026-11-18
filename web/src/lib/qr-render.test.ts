@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { defaultDesign } from "@/lib/qr"
-import { fileName, framedSvg, nestSvg, resizeSvg, stylingOptions } from "@/lib/qr-render"
+import { artSvg, fileName, framedSvg, nestSvg, resizeSvg, stylingOptions } from "@/lib/qr-render"
 
 describe("stylingOptions", () => {
     it("raises error correction when a logo is present", () => {
@@ -78,4 +78,13 @@ describe("nestSvg", () => {
 it("derives file names", () => {
     expect(fileName("Menu du jour (été)", "png")).toBe("menu-du-jour-ete.png")
     expect(fileName("!!!", "svg")).toBe("qr-code.svg")
+})
+
+describe("artSvg", () => {
+    it("wraps the artwork as a square SVG that frames can nest", () => {
+        const svg = artSvg('data:image/webp;base64,AAA"', 600)
+        expect(svg).toContain('width="600" height="600"')
+        expect(svg).toContain('href="data:image/webp;base64,AAA"')
+        expect(nestSvg(svg, 10, 10, 300)).toContain('x="10"')
+    })
 })

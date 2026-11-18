@@ -8,10 +8,12 @@ import {
     ImagePlusIcon,
     ScanIcon,
     Trash2Icon,
+    WandSparklesIcon,
 } from "lucide-react"
 import { useId } from "react"
 import type { ReactNode } from "react"
 
+import { ArtStudio } from "@/components/qr/art-studio"
 import { ChoiceGrid } from "@/components/qr/choice-grid"
 import { ColorField } from "@/components/qr/color-field"
 import { EditorSection } from "@/components/qr/editor-section"
@@ -154,9 +156,18 @@ function PresetGallery({ design, onChange, limited }: Props & { limited: boolean
     )
 }
 
-export function DesignSections({ design, onChange, limited = false }: Props & { limited?: boolean }) {
-    // Every design key but `shape` holds an object of settings; `shape` is set directly.
-    const set = <TKey extends Exclude<keyof Design, "shape">>(key: TKey, value: Partial<Design[TKey]>) =>
+/**
+ * `art`: the AI artwork section, for accounts and dynamic codes only. `codeId` is set once the code exists, since the
+ * artwork encodes its short link.
+ */
+export function DesignSections({
+    design,
+    onChange,
+    limited = false,
+    art,
+}: Props & { limited?: boolean; art?: { codeId?: string } }) {
+    // Every design key but `shape` and `art` holds an object of settings; `shape` is set directly.
+    const set = <TKey extends Exclude<keyof Design, "shape" | "art">>(key: TKey, value: Partial<Design[TKey]>) =>
         onChange({ ...design, [key]: { ...design[key], ...value } })
     const frameTextId = useId()
 
@@ -170,6 +181,16 @@ export function DesignSections({ design, onChange, limited = false }: Props & { 
             >
                 <PresetGallery design={design} onChange={onChange} limited={limited} />
             </EditorSection>
+            {art && !limited ? (
+                <EditorSection
+                    value="art"
+                    icon={WandSparklesIcon}
+                    title="Visuel IA"
+                    description="Une image générée à partir de votre description, qui reste scannable"
+                >
+                    <ArtStudio codeId={art.codeId} design={design} onChange={onChange} />
+                </EditorSection>
+            ) : null}
             {limited ? null : (
                 <EditorSection
                     value="frame"

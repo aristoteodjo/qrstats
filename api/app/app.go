@@ -12,6 +12,7 @@ import (
 	"qrstats/internal/platform/database"
 	"qrstats/internal/platform/jwks"
 	"qrstats/internal/platform/logger"
+	"qrstats/internal/platform/replicate"
 	"qrstats/internal/service"
 	"qrstats/internal/store"
 )
@@ -30,8 +31,18 @@ func Build(cfg *config.Config, log zerolog.Logger) (http.Handler, error) {
 	}
 	codes := service.NewQRCodes(store.NewQRCodeStore(db), nil)
 	scans := service.NewScans(store.NewScanStore(db), cfg.VisitorSecret, cfg.TrustProxyHeaders, cfg.ClientIPHeader, nil)
+	var painter service.Painter
+	if cfg.ReplicateToken != "" {
+		client := replicate.New(cfg.ReplicateToken, cfg.ReplicateVersion)
+		if cfg.ReplicateBaseURL != "" {
+			client = client.WithBase(cfg.ReplicateBaseURL)
+		}
+		painter = client
+	}
+	codeStore := store.NewQRCodeStore(db)
+	art := service.NewArt(codeStore, store.NewArtStore(db), painter, cfg.ShortURL, cfg.ArtDailyLimit, nil)
 	return api.New(cfg, log, db, api.Deps{
-		Codes: codes, Scans: scans, Verifier: jwks.New(cfg.AuthJWKSURL, cfg.AuthIssuer, cfg.AuthAudience),
+		Codes: codes, Scans: scans, Art: art, Verifier: jwks.New(cfg.AuthJWKSURL, cfg.AuthIssuer, cfg.AuthAudience),
 	}), nil
 }
 

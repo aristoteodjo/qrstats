@@ -32,6 +32,11 @@ export function stylingOptions(design: Design, data: string, logo: string | null
     }
 }
 
+/** An AI artwork as the QR's SVG document, so frames and exports treat it like a drawn pattern. */
+export function artSvg(image: string, size: number): string {
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><image href="${image.replace(/"/g, "")}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid slice"/></svg>`
+}
+
 const escapeXml = (value: string) =>
     value.replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" })[c]!)
 

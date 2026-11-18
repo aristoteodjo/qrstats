@@ -26,6 +26,13 @@ func fail(c *gin.Context, log zerolog.Logger, err error) {
 		dto.Error(c, http.StatusTooManyRequests, "too_many_attempts", "Trop d'essais. Réessayez dans quelques minutes.")
 	case errors.Is(err, service.ErrPaused):
 		dto.Error(c, http.StatusGone, "paused", "Ce QR code est désactivé.")
+	case errors.Is(err, service.ErrArtUnavailable):
+		dto.Error(c, http.StatusServiceUnavailable, "art_unavailable", "La création de visuels IA n'est pas activée.")
+	case errors.Is(err, service.ErrArtQuota):
+		dto.Error(c, http.StatusTooManyRequests, "art_quota", "Limite de visuels IA atteinte pour aujourd'hui.")
+	case errors.Is(err, service.ErrArtProvider):
+		log.Error().Err(err).Str("request_id", middleware.RequestIDOf(c)).Msg("art provider failed")
+		dto.Error(c, http.StatusBadGateway, "art_failed", "Le service d'images ne répond pas. Réessayez dans un instant.")
 	default:
 		log.Error().Err(err).Str("request_id", middleware.RequestIDOf(c)).Msg("request failed")
 		dto.Error(c, http.StatusInternalServerError, "internal", "Erreur interne.")

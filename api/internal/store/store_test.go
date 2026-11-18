@@ -29,7 +29,7 @@ func testDB(t *testing.T) *gorm.DB {
 	if err := model.Migrate(db); err != nil {
 		t.Fatal(err)
 	}
-	db.Exec("TRUNCATE scans, qr_codes")
+	db.Exec("TRUNCATE scans, qr_codes, art_jobs")
 	return db
 }
 
@@ -125,5 +125,37 @@ func TestStoresIsolateOwnersAndAggregate(t *testing.T) {
 	db.Model(&model.Scan{}).Where("qr_code_id = ?", alice.ID).Count(&left)
 	if left != 0 {
 		t.Fatalf("deleting a code must delete its scans, %d left", left)
+	}
+}
+
+func TestArtReserveCapsPerOwnerUnderConcurrency(t *testing.T) {
+	db := testDB(t)
+	ctx := context.Background()
+	art := NewArtStore(db)
+	since := time.Now().Add(-time.Hour)
+	results := make(chan error, 8)
+	for range 8 {
+		go func() {
+			job := &model.ArtJob{ID: uuid.NewString(), OwnerSubject: "alice", QRCodeID: uuid.NewString(), Prompt: "x", Status: model.ArtPending, CreatedAt: time.Now().UTC()}
+			_, err := art.Reserve(ctx, job, since, 3)
+			results <- err
+		}()
+	}
+	ok, full := 0, 0
+	for range 8 {
+		switch err := <-results; {
+		case err == nil:
+			ok++
+		case errors.Is(err, service.ErrArtQuota):
+			full++
+		default:
+			t.Fatal(err)
+		}
+	}
+	if ok != 3 || full != 5 {
+		t.Fatalf("ok %d full %d", ok, full)
+	}
+	if used, _ := art.Used(ctx, "bob", since); used != 0 {
+		t.Fatalf("bob used %d", used)
 	}
 }

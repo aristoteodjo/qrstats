@@ -22,6 +22,7 @@ import (
 type Deps struct {
 	Codes    *service.QRCodes
 	Scans    *service.Scans
+	Art      *service.Art
 	Verifier *jwks.Verifier
 }
 
@@ -64,6 +65,10 @@ func New(cfg *config.Config, log zerolog.Logger, db *gorm.DB, deps Deps) *gin.En
 	owned.GET("/qrcodes/:id", codes.Get)
 	owned.PATCH("/qrcodes/:id", codes.Update)
 	owned.DELETE("/qrcodes/:id", codes.Delete)
+	art := handler.NewArt(deps.Art, log)
+	owned.GET("/art/quota", art.Quota)
+	owned.POST("/qrcodes/:id/art", art.Start)
+	owned.GET("/art/:id", art.Result)
 	owned.GET("/stats", handler.NewStats(deps.Scans, deps.Codes, log).Get)
 
 	return engine

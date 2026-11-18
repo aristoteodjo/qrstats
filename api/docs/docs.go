@@ -15,6 +15,63 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/art/quota": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "art"
+                ],
+                "summary": "Whether AI artworks are available, and how many are left today",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.ArtQuota"
+                        }
+                    }
+                }
+            }
+        },
+        "/art/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "art"
+                ],
+                "summary": "An artwork's progress, with the image once ready",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Artwork id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.ArtResult"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/public/qr/{slug}": {
             "get": {
                 "tags": [
@@ -303,6 +360,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/qrcodes/{id}/art": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "art"
+                ],
+                "summary": "Start an AI artwork that encodes the code's short link",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "QR code id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Description and style",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/service.ArtStartInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ArtStarted"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/r/{slug}": {
             "get": {
                 "description": "A link code goes straight to its target (with UTM parameters); every other case lands on the web page /q/{slug}.",
@@ -401,6 +521,20 @@ const docTemplate = `{
                 "field": {
                     "type": "string",
                     "example": "content.url"
+                }
+            }
+        },
+        "handler.ArtStarted": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "quota": {
+                    "$ref": "#/definitions/service.ArtQuota"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },
@@ -543,6 +677,57 @@ const docTemplate = `{
             "properties": {
                 "password": {
                     "type": "string"
+                }
+            }
+        },
+        "service.ArtQuota": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "remaining": {
+                    "type": "integer"
+                },
+                "used": {
+                    "type": "integer"
+                }
+            }
+        },
+        "service.ArtResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "description": "Image is a data URL, sent once the artwork is ready: the provider deletes its copy after an hour.",
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "service.ArtStartInput": {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string"
+                },
+                "style": {
+                    "type": "string",
+                    "enum": [
+                        "readable",
+                        "balanced",
+                        "artistic"
+                    ]
                 }
             }
         },

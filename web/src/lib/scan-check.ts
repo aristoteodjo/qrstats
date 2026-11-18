@@ -30,7 +30,10 @@ export function designContrast(design: {
     cornersSquare: { color: string }
     cornersDot: { color: string }
     background: { color: string; transparent: boolean }
+    art?: unknown
 }): number {
+    // An artwork has no ink colour to measure: only decoding it says whether it reads.
+    if (design.art) return 21
     const ground = design.background.transparent ? "#ffffff" : design.background.color
     return Math.min(
         ...[design.dots.color, design.cornersSquare.color, design.cornersDot.color].map((ink) =>

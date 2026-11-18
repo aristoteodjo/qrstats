@@ -17,9 +17,9 @@ export const auth = betterAuth({
     appName: "qrstats",
     baseURL,
     secret: process.env.BETTER_AUTH_SECRET,
-    trustedOrigins: (process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? "http://localhost:3110,http://127.0.0.1:3110").split(
-        ",",
-    ),
+    trustedOrigins: (
+        process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? "http://localhost:3110,http://127.0.0.1:3110,http://*.localhost:3110"
+    ).split(","),
     // Schema-qualified queries, not a search_path option: connection poolers (Neon, PgBouncer) refuse it.
     database: { dialect: new PostgresDialect({ pool }), type: "postgres", schemaName: "better_auth" },
     emailAndPassword: { enabled: true, minPasswordLength: 10 },
